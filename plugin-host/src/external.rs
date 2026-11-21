@@ -41,6 +41,8 @@ pub fn parse_line(line: &str) -> Option<Segment> {
                 "tool" => Some(Tone::Tool),
                 "warn" => Some(Tone::Warn),
                 "dim" => Some(Tone::Dim),
+                "ok" => Some(Tone::Ok),
+                "err" => Some(Tone::Err),
                 _ => None,
             };
             if let (Some(tone), text) = (tone, text.trim()) {

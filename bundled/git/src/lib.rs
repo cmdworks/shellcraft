@@ -21,12 +21,33 @@ impl Plugin for Git {
         let Some(branch) = git_branch(ctx.cwd) else {
             return Vec::new();
         };
-        let mut seg = Segment::new(branch, Tone::Git);
+        // options (`[plugin.git.options]`, or set by a theme): `prefix` before the branch, `dirty`
+        // and `clean` markers (default: `*` when dirty, nothing when clean)
+        let opt = |k: &str, default: &str| (ctx.opt)(k).unwrap_or_else(|| default.to_string());
+        let prefix = opt("prefix", "");
+        let mut seg = Segment::new(format!("{prefix}{branch}"), Tone::Git);
         if let Some(state) = git_state(ctx.cwd) {
             seg = seg.push(format!("|{state}"), Tone::Warn);
         }
-        if git_dirty(ctx.cwd) == Some(true) {
-            seg = seg.push("*", Tone::Warn);
+        match git_dirty(ctx.cwd) {
+            Some(true) => {
+                let dirty = opt("dirty", "*");
+                if !dirty.is_empty() {
+                    let tone = if (ctx.opt)("dirty").is_some() {
+                        Tone::Err
+                    } else {
+                        Tone::Warn
+                    };
+                    seg = seg.push(dirty, tone);
+                }
+            }
+            Some(false) => {
+                let clean = opt("clean", "");
+                if !clean.is_empty() {
+                    seg = seg.push(clean, Tone::Ok);
+                }
+            }
+            None => {}
         }
         vec![seg]
     }

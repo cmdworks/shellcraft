@@ -89,7 +89,28 @@
           "ok": { "$ref": "#/$defs/sgr" }, "err": { "$ref": "#/$defs/sgr" }, "dim": { "$ref": "#/$defs/sgr" },
           "version": { "$ref": "#/$defs/sgr" }, "tool": { "$ref": "#/$defs/sgr" },
           "fzf": { "type": "string", "description": "FZF_DEFAULT_OPTS value." },
-          "bat": { "type": "string", "description": "BAT_THEME value." }
+          "bat": { "type": "string", "description": "BAT_THEME value." },
+          "layout": {
+            "type": "object",
+            "description": "Own prompt layout; the prompt is then drawn by shellcraft (async) instead of in the shell.",
+            "additionalProperties": false,
+            "properties": {
+              "left": { "type": "array", "items": { "enum": ["remote", "root", "venv", "aws", "dir", "segments", "duration", "status", "jobs", "symbol"] } },
+              "right": { "type": "array", "items": { "enum": ["remote", "root", "venv", "aws", "dir", "segments", "duration", "status", "jobs", "symbol"] } },
+              "dir_prefix": { "type": "string" }, "dir_lock": { "type": "string" },
+              "symbol_ok": { "type": "array", "items": { "type": "string" }, "description": "'SGR:text' pieces." },
+              "symbol_err": { "type": "array", "items": { "type": "string" }, "description": "'SGR:text' pieces; {status} is the exit code." },
+              "root_text": { "type": "string" }, "root_sgr": { "$ref": "#/$defs/sgr" },
+              "venv_prefix": { "type": "string" }, "aws_prefix": { "type": "string" },
+              "duration_format": { "type": "string" }, "jobs_format": { "type": "string" },
+              "min_duration_ms": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "options": {
+            "type": "object",
+            "description": "Options for plugins, applied while this theme is active (user settings win).",
+            "additionalProperties": { "type": "object", "additionalProperties": { "type": "string" } }
+          }
         }
       }
     },

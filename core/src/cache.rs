@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::Config;
 
 /// Bump when the cached layout changes.
-pub const FORMAT: u32 = 11;
+pub const FORMAT: u32 = 12;
 
 /// Identifies the config file a cache was built from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,4 +1,38 @@
-{% if prompt.builtin %}{% raw %}# --- built-in prompt: drawn here, only git/versions/plugin segments come from shellcraft ---
+{% if prompt.builtin and layout_custom %}{% raw %}# --- built-in prompt, theme layout: the whole prompt (left and right) comes from shellcraft ---
+# The theme draws its own layout, so the prompt is rendered by `shellcraft prompt` in the background
+# and shown when it arrives; until then the last prompt of this directory (or a plain one).
+if command -v shellcraft >/dev/null; then
+  zmodload zsh/parameter 2>/dev/null
+  typeset -g _sc_prompt_fd="" _sc_left="" _sc_right="" _sc_pwd=""
+  _sc_prompt_ready() {
+    local fd=$1 out
+    zle -F $fd
+    IFS= read -r -d '' -u $fd out
+    exec {fd}<&-
+    _sc_prompt_fd=""
+    [[ -n $out ]] || return 0
+    local l=${out%%$'\x1f'*} r=${out#*$'\x1f'}
+    [[ $l == $_sc_left && $r == $_sc_right && $_sc_pwd == $PWD ]] && return 0
+    PROMPT=$l RPROMPT=$r _sc_left=$l _sc_right=$r _sc_pwd=$PWD
+    zle && zle reset-prompt
+  }
+  _sc_prompt_pre() {
+    if [[ -n $_sc_prompt_fd ]]; then   # the previous refresh never arrived
+      zle -F $_sc_prompt_fd 2>/dev/null; exec {_sc_prompt_fd}<&-; _sc_prompt_fd=""
+    fi
+    if [[ $_sc_pwd == $PWD && -n $_sc_left ]]; then PROMPT=$_sc_left RPROMPT=$_sc_right
+    else PROMPT='%~ > ' RPROMPT=''; fi
+    local -a a=(--shell zsh --status ${_sc_ec:-0} --duration ${_sc_ms:-0} --jobs ${#jobstates} --both)
+    (( EUID == 0 )) && a+=(--root)
+    [[ -w . ]] || a+=(--readonly)
+    [[ -n ${SSH_CONNECTION-} ]] && a+=(--remote "${(%):-%n@%m}")
+    exec {_sc_prompt_fd}< <(command shellcraft prompt $a)
+    zle -F $_sc_prompt_fd _sc_prompt_ready
+  }
+  # after _sc_hist_post, which sets _sc_ec and _sc_ms
+  precmd_functions+=(_sc_prompt_pre)
+fi
+{% endraw %}{% elif prompt.builtin %}{% raw %}# --- built-in prompt: drawn here, only git/versions/plugin segments come from shellcraft ---
 # Directory, duration, exit status and symbol are rendered inside the shell, so the prompt is
 # correct the moment it appears. The segments are fetched in the background and the prompt is
 # redrawn only if they changed (starting a process from the line editor costs about 10 ms).

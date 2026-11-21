@@ -26,6 +26,8 @@ pub(crate) struct Context<'a> {
     hl: crate::colors::Highlight,
     /// The theme palette (SGR codes), for prompts a shell draws itself.
     pal: shellcraft_core::theme::Palette,
+    /// The theme has its own prompt layout, so the whole prompt comes from `shellcraft prompt`.
+    layout_custom: bool,
 }
 
 #[derive(Serialize)]
@@ -105,6 +107,7 @@ pub(crate) fn build<'a, E: ShellEmitter + ?Sized>(
             hook_events: &config.hook_events,
             hl: crate::colors::highlight(&config.palette()),
             pal: config.palette(),
+            layout_custom: config.layout().is_some(),
             atuin: inits.iter().any(|t| t.name == "atuin"),
             inits,
             unknown_tools,

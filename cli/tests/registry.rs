@@ -326,7 +326,7 @@ fn install_update_remove_official_plugins_with_no_configuration() {
     );
     let (ok, out) = e.run(&["update"], "");
     assert!(
-        ok && out.contains("docker: up to date") && out.contains("5 plugins available"),
+        ok && out.contains("docker: up to date") && out.contains("6 plugins available"),
         "{out}"
     );
     // a theme and a cheat sheet from the plugins work

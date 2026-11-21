@@ -19,6 +19,9 @@ pub enum Tone {
     Tool,
     Warn,
     Dim,
+    /// The theme's success and failure colours.
+    Ok,
+    Err,
 }
 
 /// One prompt segment: text parts, each with its own tone (`main` + `*`).

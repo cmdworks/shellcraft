@@ -223,3 +223,47 @@ echo "checked=$n bad=$bad"
     );
     let _ = std::fs::remove_dir_all(&root);
 }
+
+#[test]
+fn layout_theme_draws_parts_and_both_sides() {
+    let home = &std::env::temp_dir().join(format!("sc-layout-{}", std::process::id()));
+    std::fs::create_dir_all(home).unwrap();
+    let run = |args: &[&str]| {
+        let o = Command::new(env!("CARGO_BIN_EXE_shellcraft"))
+            .args(args)
+            .env("HOME", home)
+            .env("XDG_CONFIG_HOME", home.join("c"))
+            .env("XDG_DATA_HOME", home.join("d"))
+            .env("XDG_CACHE_HOME", home.join("k"))
+            .env_remove("NVM_BIN")
+            .env_remove("VIRTUAL_ENV")
+            .current_dir(home)
+            .output()
+            .unwrap();
+        assert!(
+            o.status.success(),
+            "{args:?}: {}",
+            String::from_utf8_lossy(&o.stderr)
+        );
+        String::from_utf8_lossy(&o.stdout).into_owned()
+    };
+    run(&["init"]);
+    run(&["install", "passionp"]);
+    run(&["theme", "passionp"]);
+    let out = run(&[
+        "prompt", "--shell", "zsh", "--both", "--jobs", "2", "--status", "1", "--root",
+    ]);
+    let (left, right) = out.trim_end().split_once('\x1f').expect("left and right");
+    assert!(
+        left.contains("ROOT") && left.contains('✘') || left.contains("\u{f00d}"),
+        "{left:?}"
+    );
+    assert!(right.contains("2"), "jobs on the right: {right:?}");
+    run(&["apply", "--shell", "zsh"]);
+    let init = std::fs::read_to_string(home.join("k/shellcraft/init.zsh")).unwrap();
+    assert!(
+        init.contains("--both"),
+        "layout themes use the async full prompt"
+    );
+    let _ = std::fs::remove_dir_all(home);
+}

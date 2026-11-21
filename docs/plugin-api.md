@@ -37,7 +37,7 @@ Unknown fields are an error, so typos are caught early.
 | `[[slot]]` | array of tables | `shell`, `name`, `file`, `position = "before"\|"after"`: code attached to a named slot of a shell's init script (see Slots). |
 | `[snippets]` | table | `<shell> = "path"`: code added to that shell's init script (the `plugin_snippets` slot, before the shell's own functions). |
 | `[aliases]`, `[abbr]`, `[env]` | tables | Data added to the config; the user's own entries win. |
-| `[theme.<name>]` | table | A colour theme: `dir`, `git`, `duration`, `ok`, `err`, `dim`, `version`, `tool` (SGR parameters such as `34` or `38;5;110`), `fzf`, `bat`. Fields left out keep the default theme's. Choose it with `shellcraft theme <name>`. `default` is reserved. |
+| `[theme.<name>]` | table | A colour theme: `dir`, `git`, `duration`, `ok`, `err`, `dim`, `version`, `tool` (SGR parameters such as `34` or `38;5;110`), `fzf`, `bat`, plus `[theme.<name>.layout]` (own prompt layout, icons, multi-colour symbol, right prompt) and `[theme.<name>.options.<plugin>]` (see the themes guide in the plugins repository). Fields left out keep the default theme's. Choose it with `shellcraft theme <name>`. `default` is reserved. |
 | `[cheat.<topic>]` | table | `file = "cheats/x.txt"`: a cheat sheet shown by `shellcraft cheat <topic>`. |
 | `[[binary]]` | array of tables | Prebuilt executables per platform (see Prebuilt binaries). |
 | `[permissions]` | table | What the plugin says it does: `exec = [...]`, `network = bool`, `write = [...]`. Shown at install so you can decide. **Information only, not enforced**: plugins run as you. |
@@ -53,7 +53,7 @@ ttl_ms = 10000                   # how long its output is reused (default 10000)
 when = { files = ["Cargo.toml"] } # only in projects containing one of these (searched upward, 8 levels)
 ```
 
-The executable runs with the current directory as its working directory and prints **one line**. An optional tone in brackets selects the colour from the user's theme: `[git]`, `[version]`, `[tool]`, `[warn]`, `[dim]` (default `[tool]`). Empty output shows nothing. Examples: `[warn] 3 todos`, `node 20`.
+The executable runs with the current directory as its working directory and prints **one line**. An optional tone in brackets selects the colour from the user's theme: `[git]`, `[version]`, `[tool]`, `[warn]`, `[ok]`, `[err]`, `[dim]` (default `[tool]`). Empty output shows nothing. Examples: `[warn] 3 todos`, `node 20`.
 
 The prompt never waits for a segment. It shows the last cached line for the current directory; when that is older than `ttl_ms` it starts a background refresh (2 second limit). The first prompt in a new directory therefore shows nothing from your plugin. Keep segments fast anyway: `plugin check` reports the time and flags anything over 50 ms.
 

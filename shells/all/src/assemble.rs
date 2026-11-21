@@ -199,6 +199,7 @@ pub fn generate(
     config_path: &Path,
 ) -> Result<(String, Vec<Installed>)> {
     let plugins = load_plugins(cfg, shell, config_path);
+    cfg.apply_theme_options();
     let script = format!("{}{}", own_path_line(shell), emitter(shell).emit(cfg)?);
     Ok((script, plugins))
 }

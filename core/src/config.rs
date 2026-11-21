@@ -256,6 +256,24 @@ pub struct Config {
 }
 
 impl Config {
+    /// The layout of the configured theme, when it has one.
+    pub fn layout(&self) -> Option<&crate::theme::Layout> {
+        self.theme_data.get(&self.theme.name)?.layout.as_ref()
+    }
+
+    /// Plugin option defaults of the configured theme: filled in where the user set nothing.
+    pub fn apply_theme_options(&mut self) {
+        let Some(theme) = self.theme_data.get(&self.theme.name).cloned() else {
+            return;
+        };
+        for (plugin, opts) in theme.options {
+            let settings = self.plugin.entry(plugin).or_default();
+            for (k, v) in opts {
+                settings.options.entry(k).or_insert(v);
+            }
+        }
+    }
+
     /// Palette of the configured theme.
     pub fn palette(&self) -> crate::theme::Palette {
         match self.theme_data.get(&self.theme.name) {

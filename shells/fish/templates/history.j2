@@ -8,7 +8,64 @@ if command -q shellcraft
 {%- endif %}
     disown 2>/dev/null
   end
-{%- if prompt.builtin %}
+{%- if prompt.builtin and layout_custom %}
+  # built-in prompt, theme layout: the whole prompt (left and right) comes from `shellcraft prompt`,
+  # rendered in the background; the shell is signalled when it arrives and repaints if it changed
+  set -g _sc_left ""
+  set -g _sc_right ""
+  set -g _sc_pwd ""
+  set -g _sc_req_pwd ""
+  set -g _sc_inflight ""
+  set -g _sc_last_status 0
+  set -g _sc_last_ms 0
+  set -g _sc_segs_file $_sc_cache/prompt.$fish_pid
+  function _sc_prompt_post --on-event fish_postexec
+    set -g _sc_last_status $status
+    set -g _sc_last_ms $CMD_DURATION
+  end
+  function fish_prompt
+    if test "$_sc_pwd" = "$PWD"; and test -n "$_sc_left"
+      printf '%s' "$_sc_left"
+    else
+      printf '%s > ' (prompt_pwd)
+    end
+  end
+  function fish_right_prompt
+    test "$_sc_pwd" = "$PWD"; and printf '%s' "$_sc_right"
+  end
+  function _sc_prompt_refresh --on-event fish_prompt
+    test -n "$_sc_inflight"; and return
+    set -g _sc_inflight 1
+    set -g _sc_req_pwd $PWD
+    set -l extra
+    test "$USER" = root; and set -a extra --root
+    test -w .; or set -a extra --readonly
+    set -q SSH_CONNECTION; and set -a extra --remote $USER@(prompt_hostname)
+    command sh -c 'f=$1; p=$2; st=$3; ms=$4; j=$5; shift 5; shellcraft prompt --shell fish --status "$st" --duration "$ms" --jobs "$j" --both "$@" > "$f.tmp" 2>/dev/null && mv "$f.tmp" "$f" && kill -USR1 "$p"' sh $_sc_segs_file $fish_pid $_sc_last_status $_sc_last_ms (count (jobs -p)) $extra >/dev/null 2>&1 &
+    disown 2>/dev/null
+  end
+  function _sc_prompt_ready --on-signal USR1
+    set -g _sc_inflight ""
+    test -r $_sc_segs_file; or return
+    read -z -l out < $_sc_segs_file
+    set -l parts (string split -m1 -- (printf '\x1f') $out)
+    set -l l $parts[1]
+    set -l r ""
+    test (count $parts) -ge 2; and set r $parts[2]
+    if test "$l" != "$_sc_left"; or test "$r" != "$_sc_right"; or test "$_sc_pwd" != "$_sc_req_pwd"
+      set -g _sc_left $l
+      set -g _sc_right $r
+      set -g _sc_pwd $_sc_req_pwd
+      commandline -f repaint
+    end
+  end
+  function _sc_prompt_preexec --on-event fish_preexec
+    set -g _sc_inflight ""
+  end
+  function _sc_prompt_cleanup --on-event fish_exit
+    command rm -f $_sc_segs_file $_sc_segs_file.tmp
+  end
+{%- elif prompt.builtin %}
   # built-in prompt: directory, duration, exit status and symbol are drawn here; only the plugin
   # segments (git, versions, ...) come from shellcraft, fetched in the background. The shell is
   # signalled when they arrive and the prompt is repainted only if they changed.

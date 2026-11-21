@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use crate::render::{render, segments, Input};
+use crate::render::{render, render_layout, segments, Input, LAYOUT_ENV};
 use anyhow::{Context, Result};
 use shellcraft_core::{cache, paths, Config, Shell};
 
@@ -24,6 +24,21 @@ pub struct PromptArgs {
     /// Print only the plugin segments (git, versions, ...), each preceded by a space
     #[arg(long)]
     pub segments_only: bool,
+    /// The shell runs as root (themes with a layout can warn about it)
+    #[arg(long)]
+    pub root: bool,
+    /// The current directory is not writable
+    #[arg(long)]
+    pub readonly: bool,
+    /// Number of background jobs
+    #[arg(long, default_value_t = 0)]
+    pub jobs: u32,
+    /// Print the right-hand prompt only (themes with a layout; empty otherwise)
+    #[arg(long)]
+    pub right: bool,
+    /// Print the left prompt, a unit separator (0x1f), then the right prompt
+    #[arg(long)]
+    pub both: bool,
 }
 
 pub fn run(config_path: &std::path::Path, args: PromptArgs) -> Result<()> {
@@ -33,6 +48,11 @@ pub fn run(config_path: &std::path::Path, args: PromptArgs) -> Result<()> {
         duration,
         remote,
         segments_only,
+        root,
+        readonly,
+        jobs,
+        right,
+        both,
     } = args;
     let shell = Shell::parse(&shell).with_context(|| format!("unknown shell `{shell}`"))?;
     let env = |k: &str| std::env::var(k).ok();
@@ -47,11 +67,42 @@ pub fn run(config_path: &std::path::Path, args: PromptArgs) -> Result<()> {
         duration_ms: duration,
         remote,
         cache_dir: paths::cache_dir(env),
+        root,
+        readonly,
+        jobs,
+        env: LAYOUT_ENV
+            .iter()
+            .filter_map(|k| std::env::var(k).ok().map(|v| ((*k).to_string(), v)))
+            .collect(),
     };
-    let draw = if segments_only { segments } else { render };
-    print!(
-        "{}",
-        draw(shell, &cfg.prompt, &cfg.plugin, &cfg.palette(), &input)
-    );
+    let pal = cfg.palette();
+    if segments_only {
+        print!(
+            "{}",
+            segments(shell, &cfg.prompt, &cfg.plugin, &pal, &input)
+        );
+        return Ok(());
+    }
+    match cfg.layout() {
+        Some(l) => {
+            let (left, r) = render_layout(shell, &cfg.prompt, &cfg.plugin, &pal, l, &input);
+            if both {
+                print!("{left}\u{1f}{r}");
+            } else if right {
+                print!("{r}");
+            } else {
+                print!("{left}");
+            }
+        }
+        None => {
+            // no layout: the right side is empty and the left is the classic prompt
+            let left = render(shell, &cfg.prompt, &cfg.plugin, &pal, None, &input);
+            if both {
+                print!("{left}\u{1f}");
+            } else if !right {
+                print!("{left}");
+            }
+        }
+    }
     Ok(())
 }
