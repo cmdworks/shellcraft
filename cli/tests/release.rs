@@ -224,7 +224,10 @@ fn update_checks_and_replaces_the_running_binary() {
     // update: the binary is replaced by the downloaded, verified one
     let url = serve(routes("99.0.0\n"), 3);
     let out = run(&url, &[]);
-    assert!(out.contains("0.1.0 -> 99.0.0"), "{out}");
+    assert!(
+        out.contains(&format!("{} -> 99.0.0", env!("CARGO_PKG_VERSION"))),
+        "{out}"
+    );
     assert!(
         me.exists()
             && Command::new(&me)

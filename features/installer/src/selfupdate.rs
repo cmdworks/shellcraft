@@ -39,13 +39,27 @@ fn parts(v: &str) -> Vec<u64> {
         .collect()
 }
 
-/// Is `latest` a higher dotted version than `current`?
+/// Is `latest` a higher version than `current`? Dotted numbers compare numerically; with equal
+/// numbers a release is newer than its pre-release (`0.1.0` over `0.1.0-alpha`), and pre-releases
+/// compare by their text (`alpha` before `beta`).
 pub fn newer(latest: &str, current: &str) -> bool {
-    let (mut a, mut b) = (parts(latest), parts(current));
+    let split = |v: &str| {
+        let v = v.trim().trim_start_matches('v');
+        let (num, pre) = v.split_once('-').map_or((v, ""), |(n, p)| (n, p));
+        (parts(num), pre.to_string())
+    };
+    let ((mut a, pa), (mut b, pb)) = (split(latest), split(current));
     let n = a.len().max(b.len());
     a.resize(n, 0);
     b.resize(n, 0);
-    a > b
+    match a.cmp(&b) {
+        std::cmp::Ordering::Equal => match (pa.is_empty(), pb.is_empty()) {
+            (true, false) => true,
+            (false, true) | (true, true) => false,
+            (false, false) => pa > pb,
+        },
+        other => other == std::cmp::Ordering::Greater,
+    }
 }
 
 fn managed(exe: &Path) -> Option<&'static str> {
@@ -105,6 +119,12 @@ mod tests {
             newer("0.1.0.1", "0.1.0") && newer("0.10.0", "0.9.0"),
             "numeric, not text, order"
         );
+        assert!(
+            newer("0.1.0", "0.1.0-alpha") && !newer("0.1.0-alpha", "0.1.0"),
+            "a release beats its pre-release"
+        );
+        assert!(newer("0.1.0-beta", "0.1.0-alpha") && !newer("0.1.0-alpha", "0.1.0-alpha"));
+        assert!(newer("0.1.1-alpha", "0.1.0") && !newer("0.1.0-alpha", "0.1.1"));
     }
 
     #[test]
