@@ -12,7 +12,7 @@
 | `path` | print the config path (`SHELLCRAFT_CONFIG` overrides it; `XDG_CONFIG_HOME` is honoured) |
 | `doctor` | check config, tools, generated script, rc wiring |
 | `stats`, `bench [N] [--shell S]`, `profile` | disk use and history; shell startup time with and without your setup; zsh `zprof` |
-| `uninstall [--purge]` | remove the rc block and generated files (the config is kept; `--purge` removes data too) |
+| `uninstall [--purge]` (or the one-line `uninstall.sh`, see the README) | remove the rc block and generated files (the config is kept; `--purge` removes data too) |
 | `completions <shell>` | completions for shellcraft itself |
 | `shellcraft` (no arguments, in a terminal) / `tui` | full-screen manager for features, plugins and themes |
 

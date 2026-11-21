@@ -41,10 +41,16 @@ what works where.
 ```bash
 shellcraft update                  # shellcraft itself and every plugin
 shellcraft uninstall               # remove the rc wiring and generated files (config is kept)
-sh uninstall.sh --all              # everything: wiring, binary, config, history, plugins
 ```
 
-`uninstall.sh` is in this repository; `--all` deletes your config and data, so leave it off to keep them.
+Remove everything (wiring, binary, config, history, plugins) in one line:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/cmdworks/shellcraft/main/uninstall.sh | sh -s -- --all
+```
+
+Leave off `-- --all` (just `| sh`) to keep your config and data. The script is
+[uninstall.sh](uninstall.sh), a few lines you can read first.
 
 ## Why
 
