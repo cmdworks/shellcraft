@@ -55,7 +55,7 @@ shellcraft-profile = { path = "features/profile" }
 shellcraft-tui = { path = "features/tui" }
 
 [workspace.package]
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 edition = "2021"
 license = "MIT"
 rust-version = "1.80"

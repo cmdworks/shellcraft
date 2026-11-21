@@ -1539,7 +1539,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1565,7 +1565,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-bundled"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "shellcraft-bundled-git",
  "shellcraft-bundled-versions",
@@ -1574,18 +1574,18 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-bundled-git"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "shellcraft-plugin",
 ]
 
 [[package]]
 name = "shellcraft-bundled-official"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 
 [[package]]
 name = "shellcraft-bundled-versions"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "shellcraft-core",
  "shellcraft-plugin",
@@ -1593,7 +1593,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-complete"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1602,7 +1602,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-core"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "criterion",
  "postcard",
@@ -1613,7 +1613,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-coreutils"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1625,7 +1625,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-health"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1635,7 +1635,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-history"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1645,7 +1645,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-installer"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1659,7 +1659,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-jump"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1668,7 +1668,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-not-found"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1676,7 +1676,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-picker"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1686,11 +1686,11 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-platform"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 
 [[package]]
 name = "shellcraft-plugin"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "serde",
  "sha2",
@@ -1700,7 +1700,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-plugins-cli"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1721,7 +1721,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-profile"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1732,7 +1732,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-prompt"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1743,7 +1743,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-shell"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "insta",
@@ -1760,7 +1760,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-shell-api"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "minijinja",
  "serde",
@@ -1770,7 +1770,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-shell-bash"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "shellcraft-core",
  "shellcraft-shell-api",
@@ -1778,7 +1778,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-shell-fish"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "shellcraft-core",
  "shellcraft-shell-api",
@@ -1786,21 +1786,21 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-shell-nushell"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "shellcraft-shell-api",
 ]
 
 [[package]]
 name = "shellcraft-shell-pwsh"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "shellcraft-shell-api",
 ]
 
 [[package]]
 name = "shellcraft-shell-zsh"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "shellcraft-core",
  "shellcraft-shell-api",
@@ -1808,7 +1808,7 @@ dependencies = [
 
 [[package]]
 name = "shellcraft-tui"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.2"
 dependencies = [
  "anyhow",
  "ratatui",
