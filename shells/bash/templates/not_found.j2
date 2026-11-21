@@ -1,6 +1,8 @@
 # --- command not found: suggest close names ---
 if command -v shellcraft >/dev/null; then
   command_not_found_handle() {
+    # the binary may be gone while this shell is still open: asking it would call this handler again
+    type -P shellcraft >/dev/null || { echo "bash: $1: command not found" >&2; return 127; }
     command shellcraft suggest --pretty -- "$1"
     return 127
   }

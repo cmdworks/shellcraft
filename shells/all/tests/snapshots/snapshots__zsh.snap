@@ -481,6 +481,8 @@ fi
 # --- command not found: suggest close names; `fix` puts the corrected last command in the buffer ---
 if command -v shellcraft >/dev/null; then
   command_not_found_handler() {
+    # the binary may be gone while this shell is still open: asking it would call this handler again
+    (( $+commands[shellcraft] )) || { print -u2 "zsh: command not found: $1"; return 127; }
     command shellcraft suggest --pretty -- "$1"
     return 127
   }

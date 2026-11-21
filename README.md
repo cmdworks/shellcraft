@@ -1,46 +1,152 @@
-<h1 align="center">shellcraft</h1>
+<div align="center">
 
-<p align="center">
-  <a href="https://github.com/cmdworks/shellcraft/releases"><img alt="release" src="https://img.shields.io/github/v/release/cmdworks/shellcraft?include_prereleases&label=release"></a>
-  <a href="https://github.com/cmdworks/shellcraft/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/cmdworks/shellcraft/ci.yml?label=CI"></a>
-  <a href="LICENSE"><img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
-  <img alt="built with Rust" src="https://img.shields.io/badge/built%20with-Rust-orange?logo=rust">
-  <img alt="shells" src="https://img.shields.io/badge/shells-zsh%20%7C%20bash%20%7C%20fish%20%7C%20nushell%20%7C%20pwsh-informational">
-  <a href="https://github.com/cmdworks/shellcraft-plugins"><img alt="plugins repository" src="https://img.shields.io/badge/plugins-cmdworks%2Fshellcraft--plugins-8A2BE2"></a>
-</p>
+# ⚡ shellcraft
 
-<p align="center"><b>Fast, single-binary shell customization.</b> One config for every shell.<br>
-Plugins and themes live in <a href="https://github.com/cmdworks/shellcraft-plugins">shellcraft-plugins</a>.</p>
+**A fast, single-binary shell customization tool.**<br>
+One config for zsh, bash, fish, nushell and PowerShell. Plugins and themes included.
+
+[![release](https://img.shields.io/github/v/release/cmdworks/shellcraft?include_prereleases&label=release&color=orange)](https://github.com/cmdworks/shellcraft/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/cmdworks/shellcraft/ci.yml?label=CI)](https://github.com/cmdworks/shellcraft/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+![built with Rust](https://img.shields.io/badge/built%20with-Rust-orange?logo=rust)
+![shells](https://img.shields.io/badge/shells-zsh%20·%20bash%20·%20fish%20·%20nushell%20·%20pwsh-informational)
+[![plugins](https://img.shields.io/badge/plugins-shellcraft--plugins-8A2BE2)](https://github.com/cmdworks/shellcraft-plugins)
+
+[Install](#-install) · [Features](#-features) · [Commands](#-commands) · [Plugins and themes](#-plugins-and-themes) · [Docs](#-documentation) · [Plugins repo](https://github.com/cmdworks/shellcraft-plugins)
+
+</div>
+
+```text
+…/code/app  main ✔  rs stable ❯❯❯                                         [󰎫 1.2s]
+```
+
+<sub>The `passionp` theme (needs a Nerd Font): icons, a red-yellow-green arrow, command time on the right.</sub>
 
 ---
 
-A fast, single-binary shell customization tool written in Rust. One config drives zsh, bash, fish,
-nushell and PowerShell; the prompt, directory jumping, history with suggestions, fuzzy picker,
-`ls`, `cat` and completion are built in, and everything else is a plugin.
+## 🚀 Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cmdworks/shellcraft/main/install.sh | sh
 ```
 
-That downloads a checked release, writes a default config and wires your shell (undo with
-`shellcraft uninstall`). Open a new terminal and:
+Downloads a checked release into `~/.local/bin`, writes a default config and wires your shell.
+Open a new terminal and you are done. Or build it yourself: `cargo build --release`.
 
 ```bash
-shellcraft search                  # the official plugins
-shellcraft install docker themes   # install plugins by name; no configuration
-shellcraft update                  # update shellcraft and every plugin
 shellcraft doctor                  # check the setup
+shellcraft install docker themes   # add plugins by name, no configuration
+shellcraft theme passionp          # switch theme
+shellcraft update                  # update shellcraft and every plugin
 ```
 
-**Status: early development.** Tested on macOS (Apple silicon) with real zsh, bash, fish and nushell
-sessions. Linux, Windows and PowerShell are untested. See [docs/shells.md](docs/shells.md) for exactly
-what works where.
+> **Status: early development (alpha).** Tested on macOS (Apple silicon) with real zsh, bash, fish
+> and nushell sessions. Linux, Windows and PowerShell are covered by CI only.
+> [docs/shells.md](docs/shells.md) says exactly what works where.
 
-## Update and uninstall
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**🎯 Prompt**<br>
+Directory, git branch and dirty mark, language versions, command time, exit status. Themes can
+define the whole layout: icons, multi-colour symbol, a right-hand prompt.
+
+**🧭 Navigation**<br>
+`j <words>` and `ji` (frecency jump), Ctrl-T files, Alt-C directories, a built-in fuzzy picker.
+No fzf or zoxide needed.
+
+**📜 History**<br>
+SQLite with exit code, directory and duration. Ctrl-R picker; dim suggestions from your history,
+including your other terminals (zsh).
+
+</td>
+<td width="50%" valign="top">
+
+**🎨 Themes**<br>
+`nord`, `dracula`, `gruvbox`, `passionp` and your own. They recolour the prompt, fzf, bat and
+shell highlighting.
+
+**🧩 Plugins with a contract**<br>
+Prompt segments, commands, hooks, shell snippets, themes, cheat sheets, aliases, prebuilt binaries.
+Versioned API, install by name, hash-locked.
+
+**🗂️ Files and completion**<br>
+Built-in `ls` (colours, tree) and `cat` (syntax colours), cheat sheets, completion learned from
+`--help` and cached.
+
+</td>
+</tr>
+</table>
+
+| | shellcraft | Oh My Zsh (git, z, suggestions, highlighting) |
+| :--- | :--- | :--- |
+| Shell startup cost (zsh) | **about 6 ms** | about 47 ms |
+| First Tab press | **about 50 ms** | about 160 ms |
+| Typing latency | 1.7 ms per key | n/a |
+| Prompt usable after Enter | about 4 ms | n/a |
+| Footprint | one 8 MB binary (4 MB minimal build) | a framework plus plugin clones |
+
+<sub>macOS Apple silicon, zsh 5.9. Method and raw numbers: [docs/performance.md](docs/performance.md).</sub>
+
+## 🛠 Commands
+
+`shellcraft --help` is always current; the full reference is [docs/commands.md](docs/commands.md).
+
+**Set up and look after**
+
+| Command | What it does |
+| :--- | :--- |
+| `shellcraft` | full-screen manager: features, plugins, themes |
+| `setup` / `init` | a short wizard, or just write a commented default config |
+| `apply [--rc]` | generate the shell script (and wire your rc file, with a backup) |
+| `doctor` · `stats` · `bench` | check the setup, disk use, startup time |
+| `update [--check]` | update every plugin, then shellcraft itself |
+| `uninstall [--purge]` | remove the wiring and generated files (config is kept) |
+
+**Plugins and themes**
+
+| Command | What it does |
+| :--- | :--- |
+| `search [query]` | the official plugins and your registries |
+| `install <name>...` | by name, `owner/repo[/folder][@rev]`, or a git URL (`#folder`) |
+| `remove <name>` · `list` | remove, or list what is installed |
+| `theme [name]` | list themes or switch one |
+| `plugin new · check · link` | write, validate and live-link your own plugin |
+| `pull <repo>` · `push` | restore or save your whole setup through a git repository |
+
+**Every day**
+
+| Command | What it does |
+| :--- | :--- |
+| `j <words>` · `ji` | jump to a frecent directory (`ji` shows a list) |
+| `hist search · stats` | search and summarise your history |
+| `cheat [topic]` | cheat sheets (git, tar, ssh, ...) |
+| `pick` · `files` | fuzzy picker for any list; files that honour `.gitignore` |
+| `ls` · `cat` | built-in directory listing and file viewer |
+
+## 🧩 Plugins and themes
+
+The official plugins and themes live in **[cmdworks/shellcraft-plugins](https://github.com/cmdworks/shellcraft-plugins)**
+and also ship inside the binary, so `install` works offline. Anyone can publish one: from a GitHub
+repository, any git URL, or a folder of a repository.
 
 ```bash
-shellcraft update                  # shellcraft itself and every plugin
-shellcraft uninstall               # remove the rc wiring and generated files (config is kept)
+shellcraft install docker git-aliases cheats     # official plugins
+shellcraft install passionp && shellcraft theme passionp
+shellcraft install someone/their-plugin@v1.2     # your own or a community plugin
+```
+
+Plugins run as you and are not sandboxed: read before you install ([SECURITY.md](SECURITY.md)).
+Writing one? Start with the guides in the plugins repository, then the [plugin API](docs/plugin-api.md).
+
+## 🧹 Update and uninstall
+
+```bash
+shellcraft update
+shellcraft uninstall                 # keeps your config
 ```
 
 Remove everything (wiring, binary, config, history, plugins) in one line:
@@ -49,50 +155,24 @@ Remove everything (wiring, binary, config, history, plugins) in one line:
 curl -fsSL https://raw.githubusercontent.com/cmdworks/shellcraft/main/uninstall.sh | sh -s -- --all
 ```
 
-Leave off `-- --all` (just `| sh`) to keep your config and data. The script is
-[uninstall.sh](uninstall.sh), a few lines you can read first.
+Leave off `-- --all` to keep your config and data. The script is [uninstall.sh](uninstall.sh), a
+few lines you can read first.
 
-## Why
-
-- **Fast.** In zsh, startup costs about 6 ms (Oh My Zsh with git, z, suggestions and highlighting:
-  about 47 ms), typing is 1.7 ms per key, the prompt is usable 4 ms after Enter, the first Tab is
-  about 50 ms (Oh My Zsh about 160 ms). Method and numbers: [docs/performance.md](docs/performance.md).
-- **Self-contained.** No fzf, zoxide, starship, eza or bat needed. One 8 MB binary (4 MB minimal build).
-- **One config.** `~/.config/shellcraft/shellcraft.toml`, validated, commented, the same for every shell.
-- **Plugins with a contract.** A versioned plugin API, install by name, hash-locked, optionally signed
-  registries. Official plugins live in [cmdworks/shellcraft-plugins](https://github.com/cmdworks/shellcraft-plugins).
-
-## What you get
+## 📚 Documentation
 
 | | |
 | :--- | :--- |
-| Prompt | directory, git branch and dirty mark, language versions, duration, exit status; themes |
-| Typing (zsh) | dim suggestion from your history (including your other terminals), syntax colours |
-| Navigation | `j <words>` and `ji` (frecency jump), Ctrl-T files, Alt-C directories, built-in fuzzy picker |
-| History | SQLite with exit code, directory and duration; Ctrl-R picker |
-| Files | `ls` (colours, `-l`, tree), `cat` (syntax colours), cheat sheets |
-| Completion | flags and subcommands learned from `--help`, cached |
-| Plugins | prompt segments, commands, hooks, shell snippets, themes, cheat sheets, aliases, prebuilt binaries |
-| Management | `setup`, `doctor`, `bench`, a full-screen manager (`shellcraft` with no arguments) |
+| [Commands](docs/commands.md) | every command |
+| [Configuration](docs/configuration.md) | every config option |
+| [Shells](docs/shells.md) | what works in which shell |
+| [Plugin API](docs/plugin-api.md) | the contract, with a [JSON schema](docs/schema/plugin-manifest.schema.json) |
+| [Plugin distribution](docs/plugin-distribution.md) | official, GitHub, any git URL; pinning; prebuilt binaries |
+| [Architecture](docs/architecture.md) | how it works, where code goes |
+| [Performance](docs/performance.md) | benchmarks and how to reproduce them |
+| [Releasing](docs/releasing.md) | releases, install script, Homebrew |
+| [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) | contributing, reporting problems |
 
-## Documentation
-
-| | |
-| :--- | :--- |
-| [docs/commands.md](docs/commands.md) | every command |
-| [docs/configuration.md](docs/configuration.md) | every config option |
-| [docs/shells.md](docs/shells.md) | what works in which shell |
-| [docs/plugin-api.md](docs/plugin-api.md) | the plugin API (the contract), with a [JSON schema](docs/schema/plugin-manifest.schema.json) |
-| [docs/plugin-distribution.md](docs/plugin-distribution.md) | where plugins come from (official, GitHub, any git URL), pinning, prebuilt binaries |
-| [docs/architecture.md](docs/architecture.md) | how it works, where code goes |
-| [docs/performance.md](docs/performance.md) | benchmarks and how to reproduce them |
-| [docs/releasing.md](docs/releasing.md) | releases, install script, Homebrew, the plugins copy |
-| [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) | contributing and reporting problems |
-
-Writing a plugin? Start with the guides in
-[shellcraft-plugins](https://github.com/cmdworks/shellcraft-plugins) (`shellcraft plugin new`, `check`, `link`).
-
-## Build from source
+## 🔧 Build from source
 
 ```bash
 cargo build --release
@@ -100,15 +180,15 @@ target/release/shellcraft init && target/release/shellcraft apply --rc
 ```
 
 `cargo build --release --no-default-features` builds the core without the TUI, tool installer and
-`ls`/`cat`. Development: [CONTRIBUTING.md](CONTRIBUTING.md). A throw-away shell to try changes without
-touching your own setup: `scripts/try.sh zsh` (or `direnv allow`, then `try-zsh`).
+`ls`/`cat`. A throw-away shell to try changes without touching your own setup: `scripts/try.sh zsh`.
 
-## Honest limits
+## ⚠️ Honest limits
 
-No sandbox: plugins run as you (see [SECURITY.md](SECURITY.md)). Suggestions and highlighting exist
-only in zsh (fish and PowerShell use their own, themed). bash gets the prompt, jump, history and
-picker but no ghost text. Nothing here has had more than one person using it yet.
+No sandbox: plugins run as you. Suggestions and highlighting exist only in zsh (fish and PowerShell
+use their own, themed); bash gets the prompt, jump, history and picker but no ghost text. Layout
+themes (right prompt) work in zsh and fish. Nothing here has had more than one person using it yet.
 
-## License
+## 🤝 Contributing and license
 
-MIT, see [LICENSE](LICENSE).
+Issues and pull requests are welcome: [CONTRIBUTING.md](CONTRIBUTING.md). MIT licensed,
+see [LICENSE](LICENSE). Plugins and themes: [cmdworks/shellcraft-plugins](https://github.com/cmdworks/shellcraft-plugins).
