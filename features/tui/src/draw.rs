@@ -145,14 +145,23 @@ fn theme(f: &mut Frame, app: &App, area: Rect) {
     let [l, r] =
         Layout::horizontal([Constraint::Percentage(40), Constraint::Percentage(60)]).areas(area);
     let items = app
-        .snapshot
-        .themes
+        .theme_choices()
         .iter()
         .enumerate()
-        .map(|(i, t)| ListItem::new(format!("({}) {t}", if i == app.theme { "•" } else { " " })))
+        .map(|(i, t)| {
+            let more = if app.theme_needs_install(i) {
+                "  (install)"
+            } else {
+                ""
+            };
+            ListItem::new(format!(
+                "({}) {t}{more}",
+                if i == app.theme { "•" } else { " " }
+            ))
+        })
         .collect();
     list(f, l, "Theme", items, app.cursor);
-    let c = swatch(app.previewed_theme());
+    let c = swatch(&app.previewed_theme());
     let prompt = Line::from(vec![
         Span::styled("~/code/app", Style::new().fg(c.0)),
         Span::raw(" "),
@@ -195,6 +204,7 @@ fn swatch(name: &str) -> (Color, Color, Color, Color) {
             Color::Rgb(250, 189, 47),
             Color::Rgb(184, 187, 38),
         ),
+        "passionp" => (Color::Cyan, Color::Cyan, Color::Green, Color::Green),
         _ => (Color::Blue, Color::Magenta, Color::Green, Color::Green),
     }
 }

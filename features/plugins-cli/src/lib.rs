@@ -239,6 +239,7 @@ pub struct CatalogEntry {
     pub description: String,
     pub installed: bool,
     pub note: String,
+    pub kind: String,
 }
 
 /// Installed plugins plus whatever the configured registries offer (offline: cached registries only).
@@ -255,6 +256,7 @@ pub fn catalog(host: &Host) -> Vec<CatalogEntry> {
                 description: m.description.clone(),
                 installed: true,
                 note: p.trust.err().unwrap_or_default(),
+                kind: m.kind.clone(),
             });
         }
         for pr in problems {
@@ -264,6 +266,7 @@ pub fn catalog(host: &Host) -> Vec<CatalogEntry> {
                 description: String::new(),
                 installed: true,
                 note: pr,
+                kind: String::new(),
             });
         }
     }
@@ -275,6 +278,7 @@ pub fn catalog(host: &Host) -> Vec<CatalogEntry> {
                 description: f.entry.description,
                 installed: false,
                 note: format!("from registry {}", f.registry),
+                kind: f.entry.kind,
             });
         }
     }

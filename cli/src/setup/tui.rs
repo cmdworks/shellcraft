@@ -23,6 +23,7 @@ pub fn run(config_path: &Path, host: &Host) -> Result<()> {
             bundled: true,
             installed: true,
             note: String::new(),
+            kind: String::new(),
         })
         .collect();
     plugins.extend(
@@ -35,6 +36,7 @@ pub fn run(config_path: &Path, host: &Host) -> Result<()> {
                 bundled: false,
                 installed: e.installed,
                 note: e.note,
+                kind: e.kind,
             }),
     );
     let snapshot = Snapshot {

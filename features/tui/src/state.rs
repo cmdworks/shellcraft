@@ -18,6 +18,8 @@ pub struct PluginInfo {
     pub installed: bool,
     /// Why an installed plugin is not loaded, if it is not.
     pub note: String,
+    /// Plugin kind (`theme`, `segment`, ...); empty for built-ins.
+    pub kind: String,
 }
 
 /// Everything the manager needs to know, gathered by the caller.
@@ -28,6 +30,18 @@ pub struct Snapshot {
     pub shell: String,
     pub themes: Vec<String>,
     pub plugins: Vec<PluginInfo>,
+}
+
+fn theme_choices(s: &Snapshot) -> Vec<String> {
+    let mut v = s.themes.clone();
+    v.extend(
+        s.plugins
+            .iter()
+            .filter(|p| p.kind == "theme" && !p.installed && !v.contains(&p.name))
+            .map(|p| p.name.clone())
+            .collect::<Vec<_>>(),
+    );
+    v
 }
 
 /// Keys the manager understands.
@@ -133,8 +147,7 @@ impl App {
                 original: on,
             });
         }
-        let theme = snapshot
-            .themes
+        let theme = theme_choices(&snapshot)
             .iter()
             .position(|t| *t == cfg.theme.name)
             .unwrap_or(0);
@@ -201,7 +214,7 @@ impl App {
         match self.screen {
             Screen::Features => self.toggles.len(),
             Screen::Plugins => self.visible_plugins().len(),
-            Screen::Theme => self.snapshot.themes.len(),
+            Screen::Theme => self.theme_choices().len(),
             _ => 0,
         }
     }
@@ -224,7 +237,7 @@ impl App {
             );
         }
         if self.theme != self.original_theme {
-            if let Some(name) = self.snapshot.themes.get(self.theme) {
+            if let Some(name) = self.theme_choices().get(self.theme) {
                 text = edit::set_value(&text, "theme", "name", &format!("\"{name}\""));
             }
         }
@@ -232,9 +245,13 @@ impl App {
     }
 
     pub fn plan(&self) -> Plan {
+        let mut install: BTreeSet<String> = self.marks_install.clone();
+        if self.theme != self.original_theme && self.theme_needs_install(self.theme) {
+            install.extend(self.theme_choices().get(self.theme).cloned());
+        }
         Plan {
             config_text: self.new_config_text(),
-            install: self.marks_install.iter().cloned().collect(),
+            install: install.into_iter().collect(),
             remove: self.marks_remove.iter().cloned().collect(),
         }
     }
@@ -342,8 +359,6 @@ impl App {
             }
             _ => {}
         }
-        // moving over the theme list previews it; the choice is made with Enter or Space
-        let _ = self.snapshot.themes.len();
     }
 
     pub fn keys(&mut self, keys: &str) {
@@ -357,16 +372,26 @@ impl App {
     }
 
     /// Theme being previewed: under the cursor on the theme screen, else the chosen one.
-    pub fn previewed_theme(&self) -> &str {
+    pub fn previewed_theme(&self) -> String {
         let i = if self.screen == Screen::Theme {
             self.cursor
         } else {
             self.theme
         };
-        self.snapshot
-            .themes
+        self.theme_choices()
             .get(i)
-            .map_or("default", String::as_str)
+            .cloned()
+            .unwrap_or_else(|| "default".into())
+    }
+
+    /// Installed themes plus theme plugins that can still be installed (choosing one installs it).
+    pub fn theme_choices(&self) -> Vec<String> {
+        theme_choices(&self.snapshot)
+    }
+
+    /// Is theme choice `i` a theme plugin that is not installed yet?
+    pub fn theme_needs_install(&self, i: usize) -> bool {
+        i >= self.snapshot.themes.len() && i < self.theme_choices().len()
     }
 }
 
@@ -380,6 +405,7 @@ pub(crate) fn tests_snapshot(config: &str) -> Snapshot {
         bundled,
         installed,
         note: String::new(),
+        kind: String::new(),
     };
     Snapshot {
         config_path: "/c/shellcraft.toml".into(),
@@ -485,6 +511,28 @@ mod tests {
         assert!(Config::from_toml(&config_text).is_ok());
         app.keys("\n");
         assert!(matches!(app.outcome, Some(Outcome::Apply(_))));
+    }
+
+    #[test]
+    fn an_uninstalled_theme_plugin_is_a_theme_choice_and_gets_installed() {
+        let mut sn = snap("");
+        sn.plugins.push(PluginInfo {
+            kind: "theme".into(),
+            ..sn.plugins[2].clone()
+        });
+        sn.plugins.last_mut().unwrap().name = "passionp".into();
+        let mut app = App::new(sn);
+        assert_eq!(app.theme_choices().last().unwrap(), "passionp");
+        app.handle(Key::Right);
+        app.handle(Key::Right);
+        app.handle(Key::Right); // theme
+        for _ in 0..3 {
+            app.handle(Key::Down);
+        }
+        app.keys(" ");
+        let plan = app.plan();
+        assert_eq!(plan.install, vec!["passionp".to_string()]);
+        assert!(plan.config_text.contains("name = \"passionp\""));
     }
 
     #[test]
