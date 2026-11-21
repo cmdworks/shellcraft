@@ -290,7 +290,7 @@ if command -v shellcraft >/dev/null; then
       elif (( expect )) && [[ $w == [A-Za-z_][A-Za-z0-9_]#=* ]]; then
         region_highlight+=("$start $(( start + ${#${w%%=*}} )) fg=magenta memo=shellcraft"); continue
       elif (( expect )) && ! { (( prefix )) && [[ $w == -* ]] }; then
-        if (( $+commands[$w] || $+aliases[$w] || $+functions[$w] || $+builtins[$w] || $+reswords[$w] )) || [[ -x $w ]]; then
+        if (( $+commands[$w] || $+aliases[$w] || $+functions[$w] || $+builtins[$w] || $reswords[(Ie)$w] )) || [[ -x $w ]]; then
           st=fg=green,bold
         elif (( end == n )); then
           continue  # still typing this word: no verdict yet

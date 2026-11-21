@@ -118,6 +118,12 @@ fn zsh_suggests_and_colours_without_starting_a_process() {
         r#"BUFFER='ls # note'; CURSOR=${#BUFFER}; _sc_line_update; print -l -- $region_highlight"#,
     );
     assert!(text.contains("3 9 fg=8"), "{text}");
+    // a path-like word must not reach arithmetic (`../` once printed "bad floating point constant")
+    let text = zsh(
+        &root,
+        r#"BUFFER='../'; CURSOR=${#BUFFER}; _sc_line_update 2>&1; print -l -- $region_highlight"#,
+    );
+    assert!(!text.contains("bad floating"), "{text}");
     let text = zsh(
         &root,
         r#"BUFFER='FOO=bar sudo -E make'; CURSOR=${#BUFFER}; _sc_line_update; print -l -- $region_highlight"#,
