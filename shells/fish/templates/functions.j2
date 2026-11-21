@@ -1,0 +1,54 @@
+# --- functions ---
+function mkcd
+    mkdir -p -- $argv[1]; and cd -- $argv[1]
+end
+function extract
+    if not test -f "$argv[1]"
+        echo "extract: '$argv[1]' is not a file" >&2
+        return 1
+    end
+    switch $argv[1]
+        case '*.tar.bz2' '*.tbz2'
+            tar xjf $argv[1]
+        case '*.tar.gz' '*.tgz'
+            tar xzf $argv[1]
+        case '*.tar.xz' '*.txz'
+            tar xJf $argv[1]
+        case '*.tar.zst'
+            tar --zstd -xf $argv[1]
+        case '*.tar'
+            tar xf $argv[1]
+        case '*.zip'
+            unzip $argv[1]
+        case '*.gz'
+            gunzip $argv[1]
+        case '*.bz2'
+            bunzip2 $argv[1]
+        case '*.xz'
+            unxz $argv[1]
+        case '*.7z'
+            7z x $argv[1]
+        case '*.rar'
+            unrar x $argv[1]
+        case '*'
+            echo "extract: unknown format '$argv[1]'" >&2
+            return 1
+    end
+end
+function killport
+    if test -z "$argv[1]"
+        echo "usage: killport <port>" >&2
+        return 1
+    end
+    set -l pids (lsof -ti tcp:$argv[1] 2>/dev/null)
+    if test -z "$pids"
+        echo "nothing listening on $argv[1]"
+        return 0
+    end
+    kill -9 $pids; and echo "killed $pids"
+end
+function path-list
+    printf '%s\n' $PATH
+end
+set -e _sc_cache
+

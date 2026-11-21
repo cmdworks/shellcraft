@@ -1,0 +1,18 @@
+# --- history (recorded by shellcraft) ---
+if command -v shellcraft >/dev/null; then
+  zmodload zsh/datetime 2>/dev/null
+  _sc_hist_pre() { _sc_hist_cmd=$1; _sc_hist_t0=$EPOCHREALTIME; }
+  _sc_hist_post() {
+    local ec=$?
+    _sc_ec=$ec _sc_ms=0
+    [[ -n ${_sc_hist_cmd-} ]] || return 0
+    local -i ms=$(( (EPOCHREALTIME - _sc_hist_t0) * 1000 ))
+    _sc_ms=$ms
+    (( $+functions[_sc_cache_add] )) && _sc_cache_add $ec "$PWD" "$_sc_hist_cmd"
+    { command shellcraft hist add --exit $ec --duration $ms --cwd "$PWD" --session $$ -- "$_sc_hist_cmd"{% if "post" in hook_events %}; command shellcraft hook post --exit $ec --duration $ms --cmd "$_sc_hist_cmd"{% endif %} } &>/dev/null &!
+    unset _sc_hist_cmd
+  }
+  preexec_functions+=(_sc_hist_pre)
+  # runs first, so it sees the exit status of the command that just finished
+  precmd_functions=(_sc_hist_post $precmd_functions)
+fi

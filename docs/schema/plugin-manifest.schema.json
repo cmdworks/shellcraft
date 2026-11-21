@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cmdworks/shellcraft/blob/main/docs/schema/plugin-manifest.schema.json",
+  "title": "shellcraft-plugin.toml (plugin API 1)",
+  "description": "The manifest of a shellcraft plugin. Unknown fields are errors in shellcraft too. `shellcraft plugin check` is the reference validator. Editors with TOML schema support (for example Even Better TOML) can use this file.",
+  "type": "object",
+  "required": ["name", "version"],
+  "additionalProperties": false,
+  "properties": {
+    "api": { "type": "integer", "minimum": 1, "default": 1, "description": "Plugin API version this plugin was written for. Refused when higher than the installed shellcraft supports." },
+    "name": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$", "description": "Letters, digits, '-' and '_'; not 'git' or 'versions' (bundled), no '.'." },
+    "version": { "type": "string", "description": "Free-form, shown to users; MAJOR.MINOR.PATCH recommended." },
+    "description": { "type": "string" },
+    "license": { "type": "string" },
+    "shells": { "type": "array", "items": { "enum": ["zsh", "bash", "fish", "nu", "pwsh"] }, "description": "Shells supported; empty means all." },
+    "kind": { "enum": ["feature", "segment", "shell", "theme", "tool", "profile"], "default": "feature" },
+    "requires": { "type": "array", "items": { "type": "string" }, "description": "Plugins needed first, for example [\"base>=2.0\", \"docker\"]. Missing ones are installed from a registry when possible." },
+    "conflicts": { "type": "array", "items": { "type": "string" } },
+    "segment": {
+      "type": "object",
+      "description": "Prompt segments by id.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["command"],
+        "additionalProperties": false,
+        "properties": {
+          "command": { "type": "string", "description": "Executable inside the plugin folder (or @name for a [[binary]]); prints one line, optional [tone] prefix." },
+          "ttl_ms": { "type": "integer", "minimum": 0, "default": 10000 },
+          "when": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "files": { "type": "array", "items": { "type": "string" }, "description": "Show only in projects containing one of these (searched upward, 8 levels)." } }
+          }
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "description": "Commands that become `shellcraft <name>`.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["run"],
+        "additionalProperties": false,
+        "properties": { "run": { "type": "string" }, "about": { "type": "string" } }
+      }
+    },
+    "hook": {
+      "type": "object",
+      "description": "Programs started in the background on an event.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["event", "run"],
+        "additionalProperties": false,
+        "properties": { "event": { "enum": ["cd", "post"] }, "run": { "type": "string" } }
+      }
+    },
+    "slot": {
+      "type": "array",
+      "description": "Code attached to a named slot of a shell's init script.",
+      "items": {
+        "type": "object",
+        "required": ["shell", "name", "file"],
+        "additionalProperties": false,
+        "properties": {
+          "shell": { "enum": ["zsh", "bash", "fish", "nu", "pwsh"] },
+          "name": { "type": "string", "description": "See `shellcraft plugin slots <shell>`." },
+          "file": { "type": "string" },
+          "position": { "enum": ["before", "after"], "default": "after" }
+        }
+      }
+    },
+    "snippets": {
+      "type": "object",
+      "description": "Shell code added to that shell's init script.",
+      "propertyNames": { "enum": ["zsh", "bash", "fish", "nu", "pwsh"] },
+      "additionalProperties": { "type": "string" }
+    },
+    "aliases": { "type": "object", "additionalProperties": { "type": "string" } },
+    "abbr": { "type": "object", "additionalProperties": { "type": "string" } },
+    "env": { "type": "object", "additionalProperties": { "type": "string" } },
+    "theme": {
+      "type": "object",
+      "description": "Colour themes by name; missing fields keep the default theme's.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dir": { "$ref": "#/$defs/sgr" }, "git": { "$ref": "#/$defs/sgr" }, "duration": { "$ref": "#/$defs/sgr" },
+          "ok": { "$ref": "#/$defs/sgr" }, "err": { "$ref": "#/$defs/sgr" }, "dim": { "$ref": "#/$defs/sgr" },
+          "version": { "$ref": "#/$defs/sgr" }, "tool": { "$ref": "#/$defs/sgr" },
+          "fzf": { "type": "string", "description": "FZF_DEFAULT_OPTS value." },
+          "bat": { "type": "string", "description": "BAT_THEME value." }
+        }
+      }
+    },
+    "cheat": {
+      "type": "object",
+      "description": "Cheat sheets by topic, shown by `shellcraft cheat <topic>`.",
+      "additionalProperties": { "type": "object", "required": ["file"], "additionalProperties": false, "properties": { "file": { "type": "string" } } }
+    },
+    "binary": {
+      "type": "array",
+      "description": "Prebuilt executables per platform; referenced as @name.",
+      "items": {
+        "type": "object",
+        "required": ["name", "target", "url", "sha256"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "target": { "type": "string", "examples": ["aarch64-apple-darwin", "x86_64-unknown-linux-musl"] },
+          "url": { "type": "string", "pattern": "^https://" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+          "archive": { "enum": ["raw", "tar.gz"], "default": "raw" },
+          "member": { "type": "string" }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "description": "What the plugin says it does. Shown at install; information only, not enforced.",
+      "additionalProperties": false,
+      "properties": {
+        "exec": { "type": "array", "items": { "type": "string" } },
+        "network": { "type": "boolean", "default": false },
+        "write": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "$defs": {
+    "sgr": { "type": "string", "pattern": "^[0-9;]+$", "description": "SGR colour parameters such as 34 or 38;5;110." }
+  }
+}

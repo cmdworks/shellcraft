@@ -1,0 +1,65 @@
+# --- history, jump, prompt, widgets, command-not-found (built in) ---
+$script:ScOldPrompt = $function:prompt
+$script:ScLastId = 0
+$script:ScLastPwd = $PWD.Path
+function global:prompt {
+    $ok = $?
+    $saved = $global:LASTEXITCODE
+    $code = if ($ok) { 0 } elseif ($saved) { $saved } else { 1 }
+    $ms = 0
+    $h = Get-History -Count 1
+    if ($h -and $h.Id -ne $script:ScLastId) {
+        $script:ScLastId = $h.Id
+        $ms = [int]($h.EndExecutionTime - $h.StartExecutionTime).TotalMilliseconds
+        shellcraft hist add --exit $code --duration $ms --cwd $PWD.Path -- $h.CommandLine
+    }
+    if ($PWD.Path -ne $script:ScLastPwd) {
+        $script:ScLastPwd = $PWD.Path
+        shellcraft jump add -- $PWD.Path
+    }
+{%- if prompt.builtin %}
+    $remote = @()
+    if ($env:SSH_CONNECTION) { $remote = @('--remote', "$($env:USER)@$([Environment]::MachineName)") }
+    $text = shellcraft prompt --shell pwsh --status $code --duration $ms @remote
+{%- else %}
+    $text = if ($script:ScOldPrompt) { & $script:ScOldPrompt } else { "PS $($PWD.Path)> " }
+{%- endif %}
+    $global:LASTEXITCODE = $saved
+    $text
+}
+{%- if not atuin %}
+Set-PSReadLineKeyHandler -Chord 'Ctrl+r' -ScriptBlock {
+    $line = $null; $cursor = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+    $sel = shellcraft hist search | shellcraft pick --query $line
+    if ($sel) { [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $sel) }
+    try { [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt() } catch { }
+}
+{%- endif %}
+Set-PSReadLineKeyHandler -Chord 'Ctrl+t' -ScriptBlock {
+    $sel = shellcraft files | shellcraft pick
+    if ($sel) { [Microsoft.PowerShell.PSConsoleReadLine]::Insert($sel) }
+    try { [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt() } catch { }
+}
+Set-PSReadLineKeyHandler -Chord 'Alt+c' -ScriptBlock {
+    $sel = shellcraft files --dirs | shellcraft pick
+    if ($sel) { Set-Location -LiteralPath $sel }
+    try { [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt() } catch { }
+}
+# command-not-found: PowerShell 7 already prints similar command names
+function j {
+    if ($args.Count -eq 0) { Set-Location ~; return }
+    if ($args.Count -eq 1 -and (Test-Path -LiteralPath $args[0] -PathType Container)) { Set-Location -LiteralPath $args[0]; return }
+    $d = shellcraft jump query @args
+    if ($LASTEXITCODE -ne 0) { Write-Error "j: no match for: $args"; return }
+    Set-Location -LiteralPath $d
+}
+function ji {
+    $d = shellcraft jump list @args | ForEach-Object { $_ -replace '^ *[0-9.]+  ', '' } | shellcraft pick
+    if ($d) { Set-Location -LiteralPath $d }
+}
+function ll { shellcraft ls -lah @args }
+function la { shellcraft ls -a @args }
+function lt { shellcraft ls -T @args }
+Remove-Item Alias:cat -ErrorAction SilentlyContinue
+function cat { shellcraft cat @args }

@@ -1,0 +1,15 @@
+function gs { git status -sb @args }
+function gl { git log --oneline --graph --decorate -20 @args }
+function gd { git diff @args }
+function gds { git diff --staged @args }
+function ga { git add @args }
+function gc { git commit @args }
+function gp { git push @args }
+function gpl { git pull --ff-only @args }
+function gco { git checkout @args }
+function gb { git branch @args }
+{% for name, value in aliases|items %}function {{ name }} { {{ value }} @args }
+{% endfor %}
+function mkcd { param([string]$Dir) New-Item -ItemType Directory -Force -Path $Dir | Out-Null; Set-Location $Dir }
+function path-list { $env:PATH -split [IO.Path]::PathSeparator }
+

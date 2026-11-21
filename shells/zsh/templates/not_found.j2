@@ -1,0 +1,14 @@
+# --- command not found: suggest close names; `fix` puts the corrected last command in the buffer ---
+if command -v shellcraft >/dev/null; then
+  command_not_found_handler() {
+    command shellcraft suggest --pretty -- "$1"
+    return 127
+  }
+  fix() {
+    local last=${$(fc -ln -1)# } first s
+    first=${last%% *}
+    s=$(command shellcraft suggest -- "$first" | head -1) || { echo "fix: no suggestion for $first" >&2; return 1; }
+    print -z -- "$s${last#$first}"
+  }
+fi
+

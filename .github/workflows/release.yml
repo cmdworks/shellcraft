@@ -1,0 +1,79 @@
+name: release
+
+# Push a tag vX.Y.Z (matching the version in Cargo.toml). Builds the four release assets, then
+# publishes a GitHub release with them, version.txt (read by `shellcraft update`) and the Homebrew
+# formula. install.sh and `shellcraft update` expect exactly these file names.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: the tag matches Cargo.toml
+        run: |
+          want=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)
+          [ "v$want" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME does not match version $want"; exit 1; }
+
+  build:
+    needs: version
+    name: build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { os: macos-latest, target: aarch64-apple-darwin }
+          - { os: macos-latest, target: x86_64-apple-darwin }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl, cc: musl-gcc }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-musl, cc: musl-gcc }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - name: musl toolchain
+        if: contains(matrix.target, 'musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: build the assets
+        env:
+          CC_x86_64_unknown_linux_musl: ${{ matrix.cc }}
+          CC_aarch64_unknown_linux_musl: ${{ matrix.cc }}
+        run: scripts/release.sh ${{ matrix.target }}
+      - name: the binary runs (only where the runner can execute it)
+        if: matrix.target != 'x86_64-apple-darwin'
+        run: |
+          mkdir t && tar -xzf dist/shellcraft-${{ matrix.target }}.tar.gz -C t && ./t/shellcraft --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.target }}
+          path: dist/shellcraft-${{ matrix.target }}.tar.gz*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: dist-*
+          merge-multiple: true
+      - name: version.txt and the Homebrew formula
+        run: |
+          sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1 > dist/version.txt
+          scripts/release.sh formula
+          ls -l dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

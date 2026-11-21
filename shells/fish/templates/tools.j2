@@ -1,0 +1,28 @@
+# --- tools (init output cached; regenerated when the binary changes) ---
+function _sc_cached_init
+    set -l name $argv[1]
+    set -e argv[1]
+    set -l bin (command -v $argv[1]); or return 0
+    set -l f $_sc_cache/init/$name.fish
+    if not test -s $f; or test $bin -nt $f
+        mkdir -p (dirname $f)
+        $argv >$f 2>/dev/null; or begin
+            rm -f $f
+            return 0
+        end
+    end
+    source $f
+end
+{%- raw %}
+# shellcraft's own completions: generated once, loaded by fish on the first Tab (not at startup)
+set -l _sc_cf $_sc_cache/completions/shellcraft.fish
+if not test -s $_sc_cf; or test (command -v shellcraft) -nt $_sc_cf
+    mkdir -p $_sc_cache/completions
+    command shellcraft completions fish >$_sc_cf 2>/dev/null
+end
+set -g fish_complete_path $_sc_cache/completions $fish_complete_path
+{% endraw %}{% for t in inits %}_sc_cached_init {{ t.name }} {{ t.command }}
+{% endfor %}
+{%- for name in unknown_tools %}# unknown tool ignored: {{ name }}
+{% endfor %}functions -e _sc_cached_init
+

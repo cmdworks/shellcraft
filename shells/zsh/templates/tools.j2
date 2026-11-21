@@ -1,0 +1,17 @@
+# --- tools (init output cached; regenerated when the binary changes) ---
+_sc_cached_init() {
+  local name=$1; shift
+  local bin=${commands[$1]}
+  [[ -n $bin ]] || return 0
+  local f="$_sc_cache/init/$name.zsh"
+  if [[ ! -s $f || $bin -nt $f ]]; then
+    mkdir -p "${f:h}"
+    "$@" >| "$f" 2>/dev/null || { rm -f "$f"; return 0; }
+  fi
+  source "$f"
+}
+{% for t in inits %}_sc_cached_init {{ t.name }} {{ t.command }}
+{% endfor %}
+{%- for name in unknown_tools %}# unknown tool ignored: {{ name }}
+{% endfor %}unfunction _sc_cached_init
+

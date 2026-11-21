@@ -1,0 +1,14 @@
+[package]
+name = "shellcraft-bundled-versions"
+description = "Bundled versions plugin: node, bun, deno, python, go, rust, ruby"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+shellcraft-core = { workspace = true }
+shellcraft-plugin = { workspace = true }
+
+[lints]
+workspace = true

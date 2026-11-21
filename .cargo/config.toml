@@ -1,0 +1,4 @@
+# Tests and `cargo run` never touch the network: shellcraft skips the official-registry refresh and
+# the self-update check when SHELLCRAFT_OFFLINE is set (a test that needs them unsets it).
+[env]
+SHELLCRAFT_OFFLINE = "1"

@@ -1,0 +1,12 @@
+# shellcraft: generated for nu (experimental). Do not edit; change shellcraft.toml and run `shellcraft apply`.
+$env.config.history.max_size = {{ shell.history_size }}
+$env.PATH = ($env.PATH | split row (char esep) | prepend ($env.HOME | path join '.local' 'bin') | uniq)
+{% for name, value in env|items %}$env.{{ name }} = {{ value|q }}
+{% endfor %}
+{%- if plugins.list %}
+# plugins: not supported by the nu emitter ({{ plugins.list|length }} configured)
+{% endif %}
+{%- for name in unsupported_tools %}# tool {{ name }}: no init support in this emitter
+{% endfor %}
+{%- for name in unknown_tools %}# unknown tool ignored: {{ name }}
+{% endfor %}

@@ -1,0 +1,16 @@
+[package]
+name = "shellcraft-plugin"
+description = "Plugin API and host: manifest, lock, store, outside segments"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+sha2 = { workspace = true }
+shellcraft-core = { workspace = true }
+toml = { workspace = true }
+
+[lints]
+workspace = true

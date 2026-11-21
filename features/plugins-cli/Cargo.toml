@@ -1,0 +1,27 @@
+[package]
+name = "shellcraft-plugins-cli"
+description = "plugin add, update, remove, link, new, check, list and the plugin runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+ed25519-dalek = { workspace = true }
+rand_core = { workspace = true }
+sha2 = { workspace = true }
+toml = { workspace = true }
+shellcraft-bundled = { workspace = true }
+shellcraft-bundled-official = { workspace = true }
+shellcraft-core = { workspace = true }
+shellcraft-installer = { workspace = true }
+shellcraft-platform = { workspace = true }
+shellcraft-not-found = { workspace = true }
+shellcraft-plugin = { workspace = true }
+shellcraft-shell = { workspace = true }
+
+[lints]
+workspace = true

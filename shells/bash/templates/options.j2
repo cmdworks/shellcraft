@@ -1,0 +1,8 @@
+# --- options and history ---
+HISTSIZE={{ shell.history_size }}
+HISTFILESIZE={{ shell.history_size }}
+HISTCONTROL=ignoreboth:erasedups
+shopt -s histappend checkwinsize cdspell
+shopt -s autocd 2>/dev/null
+case ";${PROMPT_COMMAND-};" in *";history -a;"*) ;; *) PROMPT_COMMAND="history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;; esac
+

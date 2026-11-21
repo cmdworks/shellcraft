@@ -1,0 +1,25 @@
+[package]
+name = "shellcraft-shell"
+description = "All shells behind one lookup (emitter(kind)), plus shell selection helpers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+shellcraft-bundled = { workspace = true }
+shellcraft-core = { workspace = true }
+shellcraft-plugin = { workspace = true }
+shellcraft-shell-api = { workspace = true }
+shellcraft-shell-bash = { workspace = true }
+shellcraft-shell-fish = { workspace = true }
+shellcraft-shell-nushell = { workspace = true }
+shellcraft-shell-pwsh = { workspace = true }
+shellcraft-shell-zsh = { workspace = true }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+insta = { workspace = true }

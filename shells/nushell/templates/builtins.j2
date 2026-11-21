@@ -1,0 +1,49 @@
+# --- history, jump, prompt, widgets, command-not-found (built in) ---
+$env.config.hooks.pre_execution = ($env.config.hooks.pre_execution? | default [] | append {|| $env._sc_cmd = (commandline) })
+$env.config.hooks.pre_prompt = ($env.config.hooks.pre_prompt? | default [] | append {||
+    let cmd = ($env._sc_cmd? | default "")
+    # the Ctrl-R/T/Alt-C widgets run as host commands; they are not history
+    if ($cmd | str trim | is-not-empty) and not ($cmd | str starts-with "commandline edit") and not ($cmd | str starts-with "cd (^shellcraft") {
+        ^shellcraft hist add --exit ($env.LAST_EXIT_CODE? | default 0) --duration ($env.CMD_DURATION_MS? | default 0 | into int) --cwd $env.PWD -- $cmd
+        $env._sc_cmd = ""
+    }
+})
+$env.config.hooks.env_change = ($env.config.hooks.env_change? | default {})
+$env.config.hooks.env_change.PWD = ($env.config.hooks.env_change.PWD? | default [] | append {|before, after| ^shellcraft jump add -- $after })
+$env.config.hooks.command_not_found = {|cmd|
+    let s = (^shellcraft suggest -- $cmd | complete)
+    if $s.exit_code == 0 { $"did you mean: ($s.stdout | lines | str join ', ')?" }
+}
+{% if prompt.builtin %}
+$env.PROMPT_INDICATOR = ""
+$env.PROMPT_INDICATOR_VI_INSERT = ""
+$env.PROMPT_INDICATOR_VI_NORMAL = ""
+$env.PROMPT_MULTILINE_INDICATOR = "::: "
+$env.PROMPT_COMMAND_RIGHT = ""
+$env.PROMPT_COMMAND = {||
+    let remote = if ($env.SSH_CONNECTION? | is-not-empty) { ["--remote" $"($env.USER? | default '')@(^hostname -s | str trim)"] } else { [] }
+    ^shellcraft prompt --shell nu --status ($env.LAST_EXIT_CODE? | default 0) --duration ($env.CMD_DURATION_MS? | default 0 | into int) ...$remote
+}
+{% endif %}
+$env.config.keybindings = ($env.config.keybindings | append [
+{%- if not atuin %}
+    { name: sc_hist, modifier: control, keycode: char_r, mode: [emacs vi_insert vi_normal], event: { send: executehostcommand, cmd: "commandline edit --replace (^shellcraft hist search | ^shellcraft pick --query (commandline) | str trim)" } }
+{%- endif %}
+    { name: sc_files, modifier: control, keycode: char_t, mode: [emacs vi_insert vi_normal], event: { send: executehostcommand, cmd: "commandline edit --insert (^shellcraft files | ^shellcraft pick | str trim)" } }
+    { name: sc_cd, modifier: alt, keycode: char_c, mode: [emacs vi_insert vi_normal], event: { send: executehostcommand, cmd: "cd (^shellcraft files --dirs | ^shellcraft pick | str trim)" } }
+])
+def --env j [...terms: string] {
+    if ($terms | is-empty) { cd ~; return }
+    if ($terms | length) == 1 and ($terms.0 | path type) == "dir" { cd $terms.0; return }
+    let r = (^shellcraft jump query ...$terms | complete)
+    if $r.exit_code != 0 { error make {msg: $"j: no match for: ($terms | str join ' ')"} }
+    cd ($r.stdout | str trim)
+}
+def --env ji [...terms: string] {
+    let r = (^shellcraft jump list ...$terms | lines | each {|l| $l | str replace -r '^ *[0-9.]+  ' '' } | to text | ^shellcraft pick | complete)
+    if $r.exit_code == 0 { cd ($r.stdout | str trim) }
+}
+alias ll = ^shellcraft ls -lah
+alias la = ^shellcraft ls -a
+alias lt = ^shellcraft ls -T
+alias cat = ^shellcraft cat

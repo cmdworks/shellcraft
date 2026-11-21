@@ -1,0 +1,229 @@
+---
+source: shells/all/tests/snapshots.rs
+expression: "render(ShellKind::Bash, cfg)"
+---
+# shellcraft: generated for bash. Do not edit; change shellcraft.toml and run `shellcraft apply`.
+# Only meant for interactive shells.
+case $- in *i*) ;; *) return 0 2>/dev/null || exit 0 ;; esac
+_sc_cache="${XDG_CACHE_HOME:-$HOME/.cache}/shellcraft"
+
+# --- options and history ---
+HISTSIZE=5000
+HISTFILESIZE=5000
+HISTCONTROL=ignoreboth:erasedups
+shopt -s histappend checkwinsize cdspell
+shopt -s autocd 2>/dev/null
+case ";${PROMPT_COMMAND-};" in *";history -a;"*) ;; *) PROMPT_COMMAND="history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;; esac
+
+# --- environment ---
+# Homebrew: same variables as `brew shellenv`, without spawning brew (about 10 ms)
+for _sc_b in /opt/homebrew:/opt/homebrew /usr/local:/usr/local/Homebrew /home/linuxbrew/.linuxbrew:/home/linuxbrew/.linuxbrew/Homebrew; do
+  if [ -x "${_sc_b%%:*}/bin/brew" ]; then
+    export HOMEBREW_PREFIX=${_sc_b%%:*} HOMEBREW_CELLAR=${_sc_b%%:*}/Cellar HOMEBREW_REPOSITORY=${_sc_b#*:}
+    case ":$PATH:" in *":$HOMEBREW_PREFIX/bin:"*) ;; *) PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH" ;; esac
+    case ":${MANPATH-}:" in *":$HOMEBREW_PREFIX/share/man:"*) ;; *) export MANPATH="$HOMEBREW_PREFIX/share/man${MANPATH:+:$MANPATH}:" ;; esac
+    case ":${INFOPATH-}:" in *":$HOMEBREW_PREFIX/share/info:"*) ;; *) export INFOPATH="$HOMEBREW_PREFIX/share/info:${INFOPATH:-}" ;; esac
+    break
+  fi
+done
+unset _sc_b
+case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) PATH="$HOME/.local/bin:$PATH" ;; esac
+export PATH
+export EDITOR='nvim'
+export GREETING='it'\''s here'
+
+# --- completion ---
+if ! shopt -oq posix; then
+  if [ -r /opt/homebrew/etc/profile.d/bash_completion.sh ]; then
+    . /opt/homebrew/etc/profile.d/bash_completion.sh
+  elif [ -r /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -r /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+# Commands without a completion spec: flags and subcommands learned from --help (bash 4.1+,
+# and only when bash-completion's own loader is absent)
+if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 1) )) \
+   && ! declare -F _completion_loader >/dev/null && command -v shellcraft >/dev/null; then
+  _sc_default_complete() {
+    local line
+    COMPREPLY=()
+    while IFS= read -r line; do COMPREPLY+=("${line%%$'\t'*}"); done \
+      < <(command shellcraft complete -- "${COMP_WORDS[@]:0:COMP_CWORD+1}" 2>/dev/null)
+  }
+  complete -o bashdefault -o default -D -F _sc_default_complete
+fi
+
+
+# --- keybindings ---
+bind '"\e[A": history-search-backward'
+bind '"\eOA": history-search-backward'
+bind '"\e[B": history-search-forward'
+bind '"\eOB": history-search-forward'
+bind '"\e[1;5C": forward-word'
+bind '"\e[1;5D": backward-word'
+bind '"\e[1;3C": forward-word'
+bind '"\e[1;3D": backward-word'
+bind '"\e[H": beginning-of-line'
+bind '"\e[F": end-of-line'
+bind '"\e[1~": beginning-of-line'
+bind '"\e[4~": end-of-line'
+bind '"\e[3~": delete-char'
+bind '"\e[Z": menu-complete-backward'
+bind 'set completion-ignore-case on'
+bind 'set show-all-if-ambiguous on'
+bind 'set colored-stats on'
+bind 'set mark-symlinked-directories on'
+bind 'set menu-complete-display-prefix on'
+
+# --- tools (init output cached; regenerated when the binary changes) ---
+_sc_cached_init() {
+  local name=$1; shift
+  local bin
+  bin=$(command -v "$1") || return 0
+  local f="$_sc_cache/init/$name.bash"
+  if [ ! -s "$f" ] || [ "$bin" -nt "$f" ]; then
+    mkdir -p "$(dirname "$f")"
+    "$@" >"$f" 2>/dev/null || { rm -f "$f"; return 0; }
+  fi
+  . "$f"
+}
+_sc_cached_init shellcraft shellcraft completions bash
+_sc_cached_init zoxide zoxide init bash
+_sc_cached_init fzf fzf --bash
+_sc_cached_init atuin atuin init bash --disable-up-arrow
+unset -f _sc_cached_init
+
+# --- history (recorded by shellcraft: Ctrl-R searches it) ---
+if command -v shellcraft >/dev/null; then
+  _sc_hist_n=
+  _sc_hist_hook() {
+    local ec=$? line
+    _sc_ec=$ec
+    line=$(HISTTIMEFORMAT= builtin history 1)
+    if [[ $line =~ ^[[:space:]]*([0-9]+)[[:space:]]+(.*)$ ]] && [ "${BASH_REMATCH[1]}" != "$_sc_hist_n" ]; then
+      _sc_hist_n=${BASH_REMATCH[1]}
+      ( command shellcraft hist add --exit "$ec" --cwd "$PWD" -- "${BASH_REMATCH[2]}" >/dev/null 2>&1 & )
+    fi
+    return "$ec"
+  }
+  PROMPT_COMMAND="_sc_hist_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+  # built-in prompt (shellcraft prompt), rebuilt before each prompt
+  _sc_prompt_hook() {
+    PS1=$(command shellcraft prompt --shell bash --status "${_sc_ec:-0}" ${SSH_CONNECTION:+--remote "$USER@${HOSTNAME%%.*}"})
+  }
+  PROMPT_COMMAND="${PROMPT_COMMAND};_sc_prompt_hook"
+  _sc_file_widget() {
+    local sel
+    sel=$(command shellcraft files | command shellcraft pick) || return 0
+    READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}$sel${READLINE_LINE:$READLINE_POINT}"
+    READLINE_POINT=$((READLINE_POINT + ${#sel}))
+  }
+  _sc_cd_widget() {
+    local sel
+    sel=$(command shellcraft files --dirs | command shellcraft pick) || return 0
+    READLINE_LINE="cd -- $sel"
+    READLINE_POINT=${#READLINE_LINE}
+  }
+  bind -x '"\C-t": _sc_file_widget'
+  bind -x '"\ec": _sc_cd_widget'
+  bind -x '"ç": _sc_cd_widget'  # Option+C in macOS Terminal
+fi
+
+# --- user keys ---
+bind '"\C-g": kill-whole-line'
+
+# --- aliases ---
+alias reload='exec bash'
+alias c='clear'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias gs='git status -sb'
+alias gl='git log --oneline --graph --decorate -20'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gpl='git pull --ff-only'
+alias gco='git checkout'
+alias gb='git branch'
+if command -v shellcraft >/dev/null; then
+  alias ls='shellcraft ls'
+  alias ll='shellcraft ls -lah'
+  alias la='shellcraft ls -a'
+  alias lt='shellcraft ls -T'
+  alias cat='shellcraft cat'
+fi
+alias ll='ls -lah'
+
+# --- jump (frecency directories: j <words>, ji <words> to pick) ---
+if command -v shellcraft >/dev/null; then
+  _sc_jump_last=
+  _sc_jump_hook() {
+    [ "$PWD" = "$_sc_jump_last" ] && return
+    _sc_jump_last=$PWD
+    command shellcraft jump add -- "$PWD" 2>/dev/null
+  }
+  case ";${PROMPT_COMMAND-};" in *";_sc_jump_hook;"*) ;; *) PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}_sc_jump_hook" ;; esac
+  j() {
+    if [ $# -eq 0 ]; then cd ~; return; fi
+    if [ $# -eq 1 ] && [ -d "$1" ]; then cd -- "$1"; return; fi
+    local d; d=$(command shellcraft jump query "$@") || { echo "j: no match for: $*" >&2; return 1; }
+    cd -- "$d"
+  }
+  ji() {
+    local d; d=$(command shellcraft jump list "$@" | sed 's/^ *[0-9.]*  //' | command shellcraft pick) || return
+    cd -- "$d"
+  }
+fi
+
+# --- command not found: suggest close names ---
+if command -v shellcraft >/dev/null; then
+  command_not_found_handle() {
+    command shellcraft suggest --pretty -- "$1"
+    return 127
+  }
+fi
+
+
+# --- functions ---
+mkcd() { mkdir -p -- "$1" && cd -- "$1"; }
+extract() {
+  [ -f "$1" ] || { echo "extract: '$1' is not a file" >&2; return 1; }
+  case $1 in
+    *.tar.bz2|*.tbz2) tar xjf "$1" ;;
+    *.tar.gz|*.tgz)   tar xzf "$1" ;;
+    *.tar.xz|*.txz)   tar xJf "$1" ;;
+    *.tar.zst)        tar --zstd -xf "$1" ;;
+    *.tar)            tar xf "$1" ;;
+    *.zip)            unzip "$1" ;;
+    *.gz)             gunzip "$1" ;;
+    *.bz2)            bunzip2 "$1" ;;
+    *.xz)             unxz "$1" ;;
+    *.7z)             7z x "$1" ;;
+    *.rar)            unrar x "$1" ;;
+    *) echo "extract: unknown format '$1'" >&2; return 1 ;;
+  esac
+}
+killport() {
+  [ -n "$1" ] || { echo "usage: killport <port>" >&2; return 1; }
+  local pids; pids=$(lsof -ti tcp:"$1" 2>/dev/null)
+  [ -n "$pids" ] || { echo "nothing listening on $1"; return 0; }
+  echo "$pids" | xargs kill -9 && echo "killed $pids"
+}
+path-list() { echo "$PATH" | tr ':' '\n'; }
+fbr() {
+    local b
+    b=$(git branch --all --sort=-committerdate | grep -v HEAD | sed 's/^[* ] //; s#remotes/origin/##' | awk '!s[$0]++' | command shellcraft pick) || return
+    git checkout "$b"
+  }
+if command -v fzf >/dev/null; then
+  fshow() {
+    git log --graph --color=always --format='%C(auto)%h%d %s %C(black)%C(bold)%cr' "$@" |
+      fzf --ansi --no-sort --reverse --tiebreak=index \
+          --bind 'enter:execute(echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | xargs -I% git show --color=always % | less -R)'
+  }
+fi
+unset _sc_cache

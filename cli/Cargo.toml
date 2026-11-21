@@ -1,0 +1,46 @@
+[package]
+name = "shellcraft"
+description = "Fast single-binary shell customization tool"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "shellcraft"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+clap_complete = { workspace = true }
+shellcraft-bundled = { workspace = true }
+shellcraft-complete = { workspace = true }
+shellcraft-core = { workspace = true }
+shellcraft-coreutils = { workspace = true, optional = true }
+shellcraft-health = { workspace = true }
+shellcraft-history = { workspace = true }
+shellcraft-installer = { workspace = true, optional = true }
+shellcraft-jump = { workspace = true }
+shellcraft-not-found = { workspace = true }
+shellcraft-picker = { workspace = true }
+shellcraft-plugin = { workspace = true }
+shellcraft-plugins-cli = { workspace = true }
+shellcraft-tui = { workspace = true, optional = true }
+shellcraft-profile = { workspace = true }
+shellcraft-prompt = { workspace = true }
+shellcraft-shell = { workspace = true }
+
+[features]
+# `cargo build --no-default-features` is the core: init, apply, prompt, jump, history, plugins, profiles.
+# Optional parts: `tui` (ratatui), `installer` (downloader: ureq, rustls), `coreutils` (ls, cat, files, cheat; syntect).
+default = ["tui", "installer", "coreutils"]
+tui = ["dep:shellcraft-tui"]
+installer = ["dep:shellcraft-installer"]
+coreutils = ["dep:shellcraft-coreutils"]
+
+[dev-dependencies]
+sha2 = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,14 @@
+# --- abbreviations: expand a first word in place when you press space ---
+typeset -A _sc_abbr=(
+{% for name, value in abbr|items %}  {{ name|q }} {{ value|q }}
+{% endfor %})
+_sc_abbr_expand() {
+  if [[ $LBUFFER != *' '* && -n ${_sc_abbr[$LBUFFER]-} ]]; then
+    LBUFFER=${_sc_abbr[$LBUFFER]}
+  fi
+  zle self-insert
+}
+zle -N _sc_abbr_expand
+bindkey ' ' _sc_abbr_expand
+bindkey -M isearch ' ' magic-space
+

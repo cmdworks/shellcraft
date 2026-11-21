@@ -1,0 +1,24 @@
+# --- aliases ---
+alias reload='exec zsh'
+alias c='clear'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias gs='git status -sb'
+alias gl='git log --oneline --graph --decorate -20'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gpl='git pull --ff-only'
+alias gco='git checkout'
+alias gb='git branch'
+if command -v shellcraft >/dev/null; then
+  alias ls='shellcraft ls'
+  alias ll='shellcraft ls -lah'
+  alias la='shellcraft ls -a'
+  alias lt='shellcraft ls -T'
+  alias cat='shellcraft cat'
+fi
+{% for name, value in aliases|items %}alias {{ name }}={{ value|q }}
+{% endfor %}

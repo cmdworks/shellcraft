@@ -1,0 +1,50 @@
+# shellcraft configuration. Run `shellcraft apply` after editing.
+
+[shell]
+# default = "zsh"        # zsh, bash, fish, nu (experimental), pwsh (experimental)
+history_size = 50000
+
+[tools]
+# shellcraft needs no other tools: prompt, jump, history, picker (Ctrl-R, Ctrl-T, Alt-C),
+# ls and cat are built in. Enable these only if you also want the originals wired in.
+# starship = true   # set [prompt] builtin = false to use it
+# zoxide = true
+# fzf = true
+# mise = true
+# atuin = true      # takes over Ctrl-R
+
+[plugins]
+# Plugins as owner/repo.
+list = []
+
+[aliases]
+# ll = "ls -lah"
+
+[abbr]
+# Expanded in place when you press space after them (zsh, fish).
+# gco = "git checkout"
+
+[env]
+# EDITOR = "nvim"
+
+[keys]
+# "ctrl-r" = "history-search"
+
+[prompt]
+builtin = true           # shellcraft's own prompt; false keeps starship if enabled above
+# symbol = "❯"
+# min_duration_ms = 2000 # show how long the last command took when slower than this
+
+[theme]
+# name = "nord"          # `default` is built in; others come from theme plugins (`plugin add themes`, then `shellcraft theme <name>`)
+
+[suggest]
+inline = true            # dim recommendation after the cursor; Right arrow or End accepts it
+highlight = true         # colour the line while you type (zsh): commands, options, strings, variables
+
+[completion]
+help = true               # flags and subcommands for commands without completion, learned from `--help`
+# skip = ["somecmd"]      # commands whose --help must never be run
+
+[registry]
+# sources = ["owner/shellcraft-registry", "/path/to/local/registry"]   # where `plugin add <name>` looks

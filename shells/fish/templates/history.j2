@@ -1,0 +1,128 @@
+# --- history (recorded by shellcraft: Ctrl-R searches it) ---
+if command -q shellcraft
+  function _sc_hist_post --on-event fish_postexec
+    set -l ec $status
+    command shellcraft hist add --exit $ec --duration $CMD_DURATION --cwd $PWD -- $argv[1] >/dev/null 2>&1 &
+{%- if "post" in hook_events %}
+    command shellcraft hook post --exit $ec --duration $CMD_DURATION --cmd $argv[1] >/dev/null 2>&1 &
+{%- endif %}
+    disown 2>/dev/null
+  end
+{%- if prompt.builtin %}
+  # built-in prompt: directory, duration, exit status and symbol are drawn here; only the plugin
+  # segments (git, versions, ...) come from shellcraft, fetched in the background. The shell is
+  # signalled when they arrive and the prompt is repainted only if they changed.
+  set -g _sc_segs ""
+  set -g _sc_segs_pwd ""
+  set -g _sc_req_pwd ""
+  set -g _sc_inflight ""
+  set -g _sc_segs_file $_sc_cache/segs.$fish_pid
+  function _sc_p_paint   # sgr text
+    printf '\e[%sm%s\e[0m' $argv[1] $argv[2]
+  end
+  # sets _sc_p_head (before the segments) and _sc_p_tail (after) for status $argv[1], duration $argv[2] (ms)
+  function _sc_p_build
+    set -l st $argv[1]
+    set -l ms $argv[2]
+    set -l d $PWD
+    set -l prefix ""
+    set -l rest $d
+    if test -n "$HOME"; and begin; test "$d" = "$HOME"; or string match -q -- "$HOME/*" "$d"; end
+      set prefix "~"
+      set rest (string sub -s (math (string length -- "$HOME") + 1) -- "$d")
+    end
+    set -l parts (string split -n / -- $rest)
+    set -l n (count $parts)
+    set -l text
+    if test $n -gt 3
+      set text "…/"(string join / $parts[-3..-1])
+    else if test $n -eq 0
+      test -n "$prefix"; and set text $prefix; or set text /
+    else if test -z "$prefix"
+      set text /(string join / $parts)
+    else
+      set text "~/"(string join / $parts)
+    end
+    set -l h ""
+    if set -q SSH_CONNECTION
+      set h (_sc_p_paint {{ pal.dim|q }} "$USER@"(prompt_hostname))" "
+    end
+    set -g _sc_p_head "$h"(_sc_p_paint {{ pal.dir|q }} "$text")
+    set -l t ""
+    if test {{ prompt.min_duration_ms }} -gt 0; and test "$ms" -ge {{ prompt.min_duration_ms }}
+      set -l s (math --scale 0 "$ms / 1000")
+      if test $s -eq 0
+        set text "$ms"ms
+      else if test $s -lt 60
+        set text "$s"s
+      else if test $s -lt 3600
+        set text (math --scale 0 "$s / 60")m(math "$s % 60")s
+      else
+        set text (math --scale 0 "$s / 3600")h(math --scale 0 "($s % 3600) / 60")m
+      end
+      set t " "(_sc_p_paint {{ pal.duration|q }} "$text")
+    end
+    if test "$st" -ne 0
+      set t "$t "(_sc_p_paint {{ pal.err|q }} "[$st]")
+    end
+    if test "$st" -eq 0
+      set -g _sc_p_tail "$t "(_sc_p_paint {{ pal.ok|q }} {{ prompt.symbol|q }})" "
+    else
+      set -g _sc_p_tail "$t "(_sc_p_paint {{ pal.err|q }} {{ prompt.symbol|q }})" "
+    end
+  end
+  function fish_prompt
+    set -l st $status
+    _sc_p_build $st $CMD_DURATION
+    set -l segs ""
+    test "$_sc_segs_pwd" = "$PWD"; and set segs $_sc_segs
+    printf '%s%s%s' "$_sc_p_head" "$segs" "$_sc_p_tail"
+  end
+  # ask for fresh segments whenever a prompt is about to be shown
+  function _sc_prompt_refresh --on-event fish_prompt
+    test -n "$_sc_inflight"; and return
+    set -g _sc_inflight 1
+    set -g _sc_req_pwd $PWD
+    command sh -c 'shellcraft prompt --shell fish --segments-only > "$1.tmp" 2>/dev/null && mv "$1.tmp" "$1" && kill -USR1 "$2"' sh $_sc_segs_file $fish_pid >/dev/null 2>&1 &
+    disown 2>/dev/null
+  end
+  function _sc_prompt_ready --on-signal USR1
+    set -g _sc_inflight ""
+    test -r $_sc_segs_file; or return
+    read -z -l out < $_sc_segs_file
+    if test "$out" != "$_sc_segs"; or test "$_sc_segs_pwd" != "$_sc_req_pwd"
+      set -g _sc_segs $out
+      set -g _sc_segs_pwd $_sc_req_pwd
+      commandline -f repaint
+    end
+  end
+  function _sc_prompt_preexec --on-event fish_preexec
+    set -g _sc_inflight ""
+  end
+  function _sc_prompt_cleanup --on-event fish_exit
+    command rm -f $_sc_segs_file $_sc_segs_file.tmp
+  end
+{%- endif %}
+{%- if not atuin %}
+    function _sc_hist_widget
+      set -l sel (command shellcraft hist search | command shellcraft pick --query (commandline))
+      and commandline -r -- $sel
+      commandline -f repaint
+    end
+    bind \cr _sc_hist_widget
+{%- endif %}
+  function _sc_file_widget
+    set -l sel (command shellcraft files | command shellcraft pick --query (commandline -t))
+    and commandline -t -- (string escape -- $sel)
+    commandline -f repaint
+  end
+  function _sc_cd_widget
+    set -l sel (command shellcraft files --dirs | command shellcraft pick)
+    and cd -- $sel
+    commandline -f repaint
+  end
+  bind \ct _sc_file_widget
+  bind \ec _sc_cd_widget
+  bind ç _sc_cd_widget  # Option+C in macOS Terminal
+end
+

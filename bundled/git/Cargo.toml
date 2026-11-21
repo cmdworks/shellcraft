@@ -1,0 +1,13 @@
+[package]
+name = "shellcraft-bundled-git"
+description = "Bundled git plugin: branch, dirty marker and repository state"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+shellcraft-plugin = { workspace = true }
+
+[lints]
+workspace = true

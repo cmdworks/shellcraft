@@ -1,0 +1,14 @@
+# shellcraft: generated for fish. Do not edit; change shellcraft.toml and run `shellcraft apply`.
+status is-interactive; or return 0
+set -g _sc_cache (test -n "$XDG_CACHE_HOME"; and echo $XDG_CACHE_HOME; or echo $HOME/.cache)/shellcraft
+{%- if suggest.highlight %}
+# fish highlights as you type; these are the theme's colours
+set -g fish_color_command {{ hl.command.fish }}
+set -g fish_color_error {{ hl.error.fish }}
+set -g fish_color_param {{ hl.param.fish }}
+set -g fish_color_quote {{ hl.quote.fish }}
+set -g fish_color_operator {{ hl.operator.fish }}
+set -g fish_color_comment {{ hl.comment.fish }}
+set -g fish_color_redirection {{ hl.redirection.fish }}
+{%- endif %}
+

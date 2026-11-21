@@ -1,0 +1,13 @@
+[package]
+name = "shellcraft-shell-nushell"
+description = "Nushell support: templates, tool init, key syntax, rc file"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+shellcraft-shell-api = { workspace = true }
+
+[lints]
+workspace = true

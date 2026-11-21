@@ -1,0 +1,40 @@
+# --- functions ---
+mkcd() { mkdir -p -- "$1" && cd -- "$1"; }
+extract() {
+  [[ -f $1 ]] || { echo "extract: '$1' is not a file" >&2; return 1; }
+  case $1 in
+    *.tar.bz2|*.tbz2) tar xjf "$1" ;;
+    *.tar.gz|*.tgz)   tar xzf "$1" ;;
+    *.tar.xz|*.txz)   tar xJf "$1" ;;
+    *.tar.zst)        tar --zstd -xf "$1" ;;
+    *.tar)            tar xf "$1" ;;
+    *.zip)            unzip "$1" ;;
+    *.gz)             gunzip "$1" ;;
+    *.bz2)            bunzip2 "$1" ;;
+    *.xz)             unxz "$1" ;;
+    *.7z)             7z x "$1" ;;
+    *.rar)            unrar x "$1" ;;
+    *) echo "extract: unknown format '$1'" >&2; return 1 ;;
+  esac
+}
+killport() {
+  [[ -n $1 ]] || { echo "usage: killport <port>" >&2; return 1; }
+  local pids; pids=$(lsof -ti tcp:"$1" 2>/dev/null)
+  [[ -n $pids ]] || { echo "nothing listening on $1"; return 0; }
+  echo "$pids" | xargs kill -9 && echo "killed $pids"
+}
+path-list() { print -l $path; }
+fbr() {
+    local b
+    b=$(git branch --all --sort=-committerdate | grep -v HEAD | sed 's/^[* ] //; s#remotes/origin/##' | awk '!s[$0]++' | command shellcraft pick) || return
+    git checkout "$b"
+  }
+if (( $+commands[fzf] )); then
+  fshow() {
+    git log --graph --color=always --format='%C(auto)%h%d %s %C(black)%C(bold)%cr' "$@" |
+      fzf --ansi --no-sort --reverse --tiebreak=index \
+          --bind 'enter:execute(echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | xargs -I% git show --color=always % | less -R)'
+  }
+fi
+unset _sc_cache
+

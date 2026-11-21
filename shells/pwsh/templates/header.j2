@@ -1,0 +1,22 @@
+# shellcraft: generated for pwsh (experimental). Do not edit; change shellcraft.toml and run `shellcraft apply`.
+Set-PSReadLineOption -MaximumHistoryCount {{ shell.history_size }}
+{%- if suggest.highlight %}
+try { Set-PSReadLineOption -Colors @{ Command = "`e[{{ hl.command.sgr }}m"; Error = "`e[{{ hl.error.sgr }}m"; Parameter = "`e[{{ hl.param.sgr }}m"; String = "`e[{{ hl.quote.sgr }}m"; Operator = "`e[{{ hl.operator.sgr }}m"; Comment = "`e[{{ hl.comment.sgr }}m" } } catch { }
+{%- endif %}
+{%- if suggest.inline %}
+try { Set-PSReadLineOption -PredictionSource History -PredictionViewStyle InlineView -Colors @{ InlinePrediction = "`e[90m" } } catch { }
+{%- endif %}
+$env:PATH = (Join-Path $HOME '.local/bin') + [IO.Path]::PathSeparator + $env:PATH
+{% for name, value in env|items %}$env:{{ name }} = {{ value|q }}
+{% endfor %}
+{%- if plugins.list %}
+# plugins: not supported by the pwsh emitter ({{ plugins.list|length }} configured)
+{% endif %}
+{%- for t in inits %}if (Get-Command {{ t.name }} -ErrorAction SilentlyContinue) { Invoke-Expression (& { ({{ t.command }} | Out-String) }) }
+{% endfor %}
+{%- for name in unsupported_tools %}# tool {{ name }}: no init support in this emitter
+{% endfor %}
+{%- for name in unknown_tools %}# unknown tool ignored: {{ name }}
+{% endfor %}
+{%- for b in bindings %}Set-PSReadLineKeyHandler -Chord {{ b.sequence|q }} -Function {{ b.command|q }}
+{% endfor %}

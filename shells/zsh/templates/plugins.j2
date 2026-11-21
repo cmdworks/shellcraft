@@ -1,0 +1,20 @@
+{% if plugins.list %}
+# --- plugins (antidote, when installed; bundle regenerated when this script changes) ---
+_sc_antidote=""
+for _sc_c in "$HOME/.antidote/antidote.zsh" "${HOMEBREW_PREFIX:-/opt/homebrew}/opt/antidote/share/antidote/antidote.zsh"; do
+  if [[ -r $_sc_c ]]; then _sc_antidote=$_sc_c; break; fi
+done
+if [[ -n $_sc_antidote ]]; then
+  source "$_sc_antidote"
+  _sc_plugins="$_sc_cache/plugins.zsh"
+  if [[ ! -s $_sc_plugins || ${(%):-%x} -nt $_sc_plugins ]]; then
+    mkdir -p "$_sc_cache"
+    antidote bundle >| "$_sc_plugins" <<'SHELLCRAFT_PLUGINS'
+{% for p in plugins.list %}{{ p }}
+{% endfor %}SHELLCRAFT_PLUGINS
+  fi
+  source "$_sc_plugins"
+fi
+unset _sc_antidote _sc_c _sc_plugins
+{% endif %}
+

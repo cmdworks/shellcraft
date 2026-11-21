@@ -1,0 +1,108 @@
+# --- completion: compinit runs lazily on the first Tab (about 10 ms saved at startup) ---
+# Until then `compdef` calls from tool init scripts are queued and replayed.
+typeset -ga _sc_compdefs=()
+compdef() { _sc_compdefs+=("${(j: :)${(q)@}}"); }
+{%- if completion.help %}
+{% raw %}# Commands without their own completion: flags and subcommands learned from --help (cached)
+_sc_help_complete() {
+  [[ -n ${_comps[$words[1]]} ]] && return 1
+  local -a lines vals
+  lines=("${(@f)$(command shellcraft complete -- "${(@)words[1,CURRENT]}" 2>/dev/null)}")
+  (( ${#lines} )) && [[ -n ${lines[1]} ]] || return 1
+  local l
+  for l in $lines; do vals+=("${${l%%$'\t'*}//:/\\:}:${l#*$'\t'}"); done
+  _describe -t shellcraft-help 'flags and subcommands' vals
+}
+{% endraw %}{%- endif %}
+# Completion look, applied on the first Tab: the first zstyle loads a module that costs about 4.6 ms.
+_sc_comp_style() {
+  zstyle ':completion:*' menu select
+  zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*'
+  zstyle ':completion:*' list-colors "${(s.:.)${LS_COLORS:-di=1;34:ln=36:ex=32:so=33:pi=33}}"
+  zstyle ':completion:*' group-name ''
+  zstyle ':completion:*' list-dirs-first true
+  zstyle ':completion:*' special-dirs false
+  zstyle ':completion:*:descriptions' format '%F{8}── %d ──%f'
+  zstyle ':completion:*:messages' format '%F{8}%d%f'
+  zstyle ':completion:*:warnings' format '%F{1}no matches%f'
+{%- if completion.help %}
+  zstyle ':completion:*' completer _sc_help_complete _complete _ignored
+{%- endif %}
+}
+# Everything the completion system needs (about 20 ms): run once, at the second prompt when the
+# caches already exist (see _sc_comp_warm), otherwise on the first Tab.
+_sc_comp_setup() {
+  emulate -L zsh
+  setopt extended_glob
+  typeset -g _sc_comp_done=1
+  _sc_comp_style
+  unfunction compdef 2>/dev/null
+  local dir="${XDG_CACHE_HOME:-$HOME/.cache}/shellcraft"
+  local dump="$dir/zcompdump"
+  mkdir -p "$dir"
+  # Completion scripts of installed tools, generated once and cached (must precede compinit)
+  local cdir="$dir/completions" gen=0 spec name cmd bin f
+  local -a specs=(
+    "gh:gh completion -s zsh"
+    "docker:docker completion zsh"
+    "mise:mise completion zsh"
+    "atuin:atuin gen-completions --shell zsh"
+    "rg:rg --generate complete-zsh"
+    "starship:starship completions zsh"
+    "shellcraft:shellcraft completions zsh"
+  )
+  for spec in $specs; do
+    name=${spec%%:*}; cmd=${spec#*:}
+    bin=${commands[$name]}
+    [[ -n $bin ]] || continue
+    f="$cdir/_$name"
+    if [[ ! -s $f || $bin -nt $f ]]; then
+      mkdir -p "$cdir"
+      ${=cmd} >| "$f" 2>/dev/null || rm -f "$f"
+      gen=1
+    fi
+  done
+  # The biggest system completion functions cost 100+ ms to parse every session (_git is 388 KB).
+  # Copy them next to the cached ones and compile that folder once; zsh then skips the parsing.
+  local big d src zwc="$cdir.zwc"
+  for big in _git _gcc _tmux; do
+    src=""
+    for d in $fpath; do [[ $d != $cdir && -f $d/$big ]] && { src=$d/$big; break; }; done
+    [[ -n $src ]] || continue
+    if [[ ! -f $cdir/$big || $src -nt $cdir/$big ]]; then
+      mkdir -p "$cdir" && cp -f "$src" "$cdir/$big" && gen=1
+    fi
+  done
+  if [[ -d $cdir ]] && (( gen )) || [[ -d $cdir && ! -f $zwc ]]; then
+    zcompile "$zwc" "$cdir"/_*(N) 2>/dev/null
+  fi
+  [[ -d $cdir ]] && fpath=($cdir $fpath)
+  (( gen )) && rm -f "$dump"
+  autoload -Uz compinit
+  if [[ -n $dump(#qN.mh+24) || ! -f $dump ]]; then
+    compinit -d "$dump"
+  else
+    compinit -C -d "$dump"
+  fi
+  local c
+  for c in $_sc_compdefs; do eval "compdef $c"; done
+  unset _sc_compdefs
+}
+# The widget stays defined: fzf-completion may have captured it as its fallback.
+_sc_first_tab() {
+  (( ${+_sc_comp_done} )) || _sc_comp_setup
+  zle expand-or-complete
+}
+# After the first command, while you are thinking, not on the Tab press. A brand-new cache
+# (first ever run: completion scripts are generated) is left for the first Tab.
+typeset -gi _sc_warm_n=0
+_sc_comp_warm() {
+  (( _sc_warm_n++ >= 1 )) || return 0   # not before the very first prompt
+  precmd_functions=(${precmd_functions:#_sc_comp_warm})
+  (( ${+_sc_comp_done} )) && return 0
+  [[ -s ${XDG_CACHE_HOME:-$HOME/.cache}/shellcraft/zcompdump ]] && _sc_comp_setup
+}
+precmd_functions+=(_sc_comp_warm)
+zle -N _sc_first_tab
+bindkey '^I' _sc_first_tab
+

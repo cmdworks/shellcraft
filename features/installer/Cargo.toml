@@ -1,0 +1,20 @@
+[package]
+name = "shellcraft-installer"
+description = "Install tools with the system package manager or a checksummed download"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+flate2 = { workspace = true }
+sha2 = { workspace = true }
+shellcraft-core = { workspace = true }
+shellcraft-platform = { workspace = true }
+tar = { workspace = true }
+ureq = { workspace = true }
+
+[lints]
+workspace = true

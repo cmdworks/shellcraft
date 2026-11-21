@@ -1,0 +1,22 @@
+# --- jump (frecency directories: j <words>, ji <words> to pick) ---
+if command -v shellcraft >/dev/null; then
+  # in the background: the database write must not delay the prompt (updates are atomic renames;
+  # two cds within a few milliseconds could lose one count)
+  _sc_jump_add() { { command shellcraft jump add -- "$PWD" } &>/dev/null &!; }
+  chpwd_functions+=(_sc_jump_add)
+{%- if "cd" in hook_events %}
+  _sc_hook_cd() { command shellcraft hook cd --old "$OLDPWD" &>/dev/null &!; }
+  chpwd_functions+=(_sc_hook_cd)
+{%- endif %}
+  j() {
+    if [ $# -eq 0 ]; then cd ~; return; fi
+    if [ $# -eq 1 ] && [ -d "$1" ]; then cd -- "$1"; return; fi
+    local d; d=$(command shellcraft jump query "$@") || { echo "j: no match for: $*" >&2; return 1; }
+    cd -- "$d"
+  }
+  ji() {
+    local d; d=$(command shellcraft jump list "$@" | sed 's/^ *[0-9.]*  //' | command shellcraft pick) || return
+    cd -- "$d"
+  }
+fi
+

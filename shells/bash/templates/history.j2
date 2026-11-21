@@ -1,0 +1,50 @@
+# --- history (recorded by shellcraft: Ctrl-R searches it) ---
+if command -v shellcraft >/dev/null; then
+  _sc_hist_n=
+  _sc_hist_hook() {
+    local ec=$? line
+    _sc_ec=$ec
+    line=$(HISTTIMEFORMAT= builtin history 1)
+    if [[ $line =~ ^[[:space:]]*([0-9]+)[[:space:]]+(.*)$ ]] && [ "${BASH_REMATCH[1]}" != "$_sc_hist_n" ]; then
+      _sc_hist_n=${BASH_REMATCH[1]}
+      ( command shellcraft hist add --exit "$ec" --cwd "$PWD" -- "${BASH_REMATCH[2]}" >/dev/null 2>&1 & )
+{%- if "post" in hook_events %}
+      ( command shellcraft hook post --exit "$ec" --cmd "${BASH_REMATCH[2]}" >/dev/null 2>&1 & )
+{%- endif %}
+    fi
+    return "$ec"
+  }
+  PROMPT_COMMAND="_sc_hist_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+{%- if prompt.builtin %}
+  # built-in prompt (shellcraft prompt), rebuilt before each prompt
+  _sc_prompt_hook() {
+    PS1=$(command shellcraft prompt --shell bash --status "${_sc_ec:-0}" ${SSH_CONNECTION:+--remote "$USER@${HOSTNAME%%.*}"})
+  }
+  PROMPT_COMMAND="${PROMPT_COMMAND};_sc_prompt_hook"
+{%- endif %}
+{%- if not atuin %}
+    _sc_hist_widget() {
+      local sel
+      sel=$(command shellcraft hist search | command shellcraft pick --query "$READLINE_LINE") || return 0
+      READLINE_LINE=$sel
+      READLINE_POINT={% raw %}${#sel}{% endraw %}
+    }
+    bind -x '"\C-r": _sc_hist_widget'
+{%- endif %}
+  _sc_file_widget() {
+    local sel
+    sel=$(command shellcraft files | command shellcraft pick) || return 0
+    READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}$sel${READLINE_LINE:$READLINE_POINT}"
+    READLINE_POINT=$((READLINE_POINT + {% raw %}${#sel}{% endraw %}))
+  }
+  _sc_cd_widget() {
+    local sel
+    sel=$(command shellcraft files --dirs | command shellcraft pick) || return 0
+    READLINE_LINE="cd -- $sel"
+    READLINE_POINT={% raw %}${#READLINE_LINE}{% endraw %}
+  }
+  bind -x '"\C-t": _sc_file_widget'
+  bind -x '"\ec": _sc_cd_widget'
+  bind -x '"ç": _sc_cd_widget'  # Option+C in macOS Terminal
+fi
+

@@ -1,0 +1,24 @@
+# --- jump (frecency directories: j <words>, ji <words> to pick) ---
+if command -v shellcraft >/dev/null; then
+  _sc_jump_last=
+  _sc_jump_hook() {
+    [ "$PWD" = "$_sc_jump_last" ] && return
+    _sc_jump_last=$PWD
+    command shellcraft jump add -- "$PWD" 2>/dev/null
+{%- if "cd" in hook_events %}
+    ( command shellcraft hook cd >/dev/null 2>&1 & )
+{%- endif %}
+  }
+  case ";${PROMPT_COMMAND-};" in *";_sc_jump_hook;"*) ;; *) PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}_sc_jump_hook" ;; esac
+  j() {
+    if [ $# -eq 0 ]; then cd ~; return; fi
+    if [ $# -eq 1 ] && [ -d "$1" ]; then cd -- "$1"; return; fi
+    local d; d=$(command shellcraft jump query "$@") || { echo "j: no match for: $*" >&2; return 1; }
+    cd -- "$d"
+  }
+  ji() {
+    local d; d=$(command shellcraft jump list "$@" | sed 's/^ *[0-9.]*  //' | command shellcraft pick) || return
+    cd -- "$d"
+  }
+fi
+

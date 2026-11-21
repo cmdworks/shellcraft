@@ -1,0 +1,10 @@
+shellcraft
+  shellcraft setup            ask a few questions, write the config, apply it
+  shellcraft apply [--rc]     regenerate the init script (and wire your rc file)
+  shellcraft doctor           check config, tools, rc wiring
+  shellcraft bench            measure shell startup
+  shellcraft theme [name]     list or switch themes
+  shellcraft install [tools]  install tools with brew/apt/pacman
+  j <words> / ji <words>      jump to a frequent directory / pick with fzf
+  Ctrl-R                      search history (fzf)
+  fix                         retype the last command with the nearest command name

@@ -1,0 +1,3 @@
+# --- user keys ---
+{% for b in bindings %}bindkey {{ b.sequence|q }} {{ b.command }}
+{% endfor %}

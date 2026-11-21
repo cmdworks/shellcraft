@@ -1,0 +1,18 @@
+# --- tools (init output cached; regenerated when the binary changes) ---
+_sc_cached_init() {
+  local name=$1; shift
+  local bin
+  bin=$(command -v "$1") || return 0
+  local f="$_sc_cache/init/$name.bash"
+  if [ ! -s "$f" ] || [ "$bin" -nt "$f" ]; then
+    mkdir -p "$(dirname "$f")"
+    "$@" >"$f" 2>/dev/null || { rm -f "$f"; return 0; }
+  fi
+  . "$f"
+}
+_sc_cached_init shellcraft shellcraft completions bash
+{% for t in inits %}_sc_cached_init {{ t.name }} {{ t.command }}
+{% endfor %}
+{%- for name in unknown_tools %}# unknown tool ignored: {{ name }}
+{% endfor %}unset -f _sc_cached_init
+

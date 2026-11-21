@@ -1,0 +1,17 @@
+[package]
+name = "shellcraft-profile"
+description = "Pull and push a whole setup (config and pinned plugins) from a git repository"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+shellcraft-core = { workspace = true }
+shellcraft-plugin = { workspace = true }
+shellcraft-plugins-cli = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,134 @@
+{% if suggest.inline or suggest.highlight %}{% raw %}# --- line editor: dim suggestion from your history and syntax colours, all inside the shell ---
+# No process is started per keystroke. History is loaded once, on the first key, from shellcraft.
+# Right, End or Ctrl-F accepts the suggestion; commands from other terminals are picked up at your next prompt.
+if command -v shellcraft >/dev/null; then
+  zmodload zsh/parameter 2>/dev/null
+  typeset -gi _sc_inline={% endraw %}{% if suggest.inline %}1{% else %}0{% endif %}{% raw %} _sc_highlight={% endraw %}{% if suggest.highlight %}1{% else %}0{% endif %}{% raw %} _sc_hist_ready=0
+  typeset -ga _sc_hist=()
+  _sc_hist_load() {
+    _sc_hist_ready=1
+    _sc_stamp_seen=$(<$_sc_stamp_file) 2>/dev/null
+    local out; out=$(command shellcraft hist recent -n 3000 2>/dev/null)
+    [[ -n $out ]] && _sc_hist=("${(@f)out}")
+  }
+  # after a command: remember it for suggestions (same rules as the database: successes, one line)
+  typeset -ga _sc_own=()
+  _sc_cache_add() {
+    (( _sc_hist_ready )) || return 0
+    [[ $1 == 0 && -n $3 && $3 != *$'\n'* && $3 != *$'\t'* ]] || return 0
+    local e="$2"$'\t'"$3"
+    _sc_hist=("$e" "${(@)_sc_hist[1,2999]:#$e}")
+    _sc_own=("$e" "${(@)_sc_own[1,4]}")   # the last few of our own, kept across a reload
+  }
+  # Other terminals: every `hist add` writes a one-line stamp file (session, time). Reading it is
+  # a builtin, no process; when another session wrote since we looked, reload in the background.
+  typeset -g _sc_stamp_file="${XDG_DATA_HOME:-$HOME/.local/share}/shellcraft/history.stamp" _sc_stamp_seen="" _sc_hist_fd=""
+  _sc_cross_check() {
+    (( _sc_hist_ready )) || return 0
+    local s; s=$(<$_sc_stamp_file) 2>/dev/null || return 0
+    [[ -n $s && $s != $_sc_stamp_seen ]] || return 0
+    _sc_stamp_seen=$s
+    [[ ${s%% *} == $$ ]] && return 0   # our own write, already in memory
+    _sc_hist_reload_async
+  }
+  _sc_hist_reload_async() {
+    [[ -n $_sc_hist_fd ]] && return 0   # one reload at a time
+    exec {_sc_hist_fd}< <(command shellcraft hist recent -n 3000 2>/dev/null)
+    zle -F $_sc_hist_fd _sc_hist_reloaded
+  }
+  _sc_hist_reloaded() {
+    local fd=$1 out
+    zle -F $fd
+    IFS= read -r -d '' -u $fd out
+    exec {fd}<&-
+    _sc_hist_fd=""
+    _sc_hist_apply "$out"
+  }
+  # replace the in-memory history with what the database returned, then put our own last commands
+  # back on top (their database write may not have finished when it was read)
+  _sc_hist_apply() {
+    [[ -n $1 ]] || return 0
+    _sc_hist=("${(@f)1}")
+    local e
+    for e in "${(@Oa)_sc_own}"; do _sc_hist=("$e" "${(@)_sc_hist:#$e}"); done
+  }
+  precmd_functions+=(_sc_cross_check)
+  # newest successful command in this directory that starts with $BUFFER and is longer, else
+  # the newest anywhere
+  _sc_suggest() {
+    emulate -L zsh
+    setopt extended_glob
+    (( _sc_hist_ready )) || _sc_hist_load
+    local p=${BUFFER//(#m)[\\*?\[\]()|#~^<>]/\\$MATCH} d=${PWD//(#m)[\\*?\[\]()|#~^<>]/\\$MATCH} m t=$'\t'
+    m=${_sc_hist[(r)${d}${t}${p}?*]}   # ($'\t' written inline inside a subscript does not match)
+    [[ -n $m ]] || m=${_sc_hist[(r)*${t}${p}?*]}
+    [[ -n $m ]] && REPLY=${m#*${t}} || REPLY=""
+  }
+  # colours: split with zsh's own lexer, classify by position (command, option, string, variable)
+  _sc_highlight_line() {
+    emulate -L zsh
+    setopt extended_glob
+    local -a words; words=(${(z)BUFFER})
+    local w rest st pos=1 start end skip=0 expect=1 prefix=0 n=${#BUFFER}
+    for w in $words; do
+      rest=${BUFFER[pos,-1]}
+      start=$(( pos + ${#rest} - ${#${rest##[[:space:]]#}} - 1 ))
+      end=$(( start + ${#w} )); pos=$(( end + 1 ))
+      if [[ $w == \#* ]]; then
+        region_highlight+=("$start $n fg=8 memo=shellcraft"); break
+      elif [[ $w == [\|\&\;]## ]]; then
+        st=fg=blue; expect=1; prefix=0
+      elif [[ $w == [0-9]#[\<\>]* ]]; then
+        st=fg=blue; [[ $w == [0-9]#[\<\>\&]## ]] && skip=1
+      elif (( skip )); then
+        skip=0; continue
+      elif (( expect )) && [[ $w == [A-Za-z_][A-Za-z0-9_]#=* ]]; then
+        region_highlight+=("$start $(( start + ${#${w%%=*}} )) fg=magenta memo=shellcraft"); continue
+      elif (( expect )) && ! { (( prefix )) && [[ $w == -* ]] }; then
+        if (( $+commands[$w] || $+aliases[$w] || $+functions[$w] || $+builtins[$w] || $+reswords[$w] )) || [[ -x $w ]]; then
+          st=fg=green,bold
+        elif (( end == n )); then
+          continue  # still typing this word: no verdict yet
+        else
+          st=fg=red
+        fi
+        case $w in sudo|doas|env|command|exec|nohup|time|builtin|noglob|nocorrect|xargs) prefix=1 ;; *) expect=0 ;; esac
+      elif [[ $w == -* ]]; then st=fg=cyan
+      elif [[ $w == [\'\"]* ]]; then st=fg=yellow
+      elif [[ $w == \$* ]]; then st=fg=magenta
+      else continue
+      fi
+      region_highlight+=("$start $end $st memo=shellcraft")
+    done
+  }
+  _sc_line_update() {
+    region_highlight=("${(@)region_highlight:#*memo=shellcraft}")
+    POSTDISPLAY=""
+    [[ -n $BUFFER && $BUFFER != *$'\n'* ]] || return 0
+    if (( _sc_inline )) && [[ $CURSOR -eq ${#BUFFER} ]]; then
+      _sc_suggest
+      if [[ -n $REPLY ]]; then
+        POSTDISPLAY=${REPLY#"$BUFFER"}
+        region_highlight+=("${#BUFFER} $(( ${#BUFFER} + ${#POSTDISPLAY} )) fg=8 memo=shellcraft")
+      fi
+    fi
+    (( _sc_highlight )) && _sc_highlight_line
+  }
+  _sc_suggest_accept() {
+    if [[ -n $POSTDISPLAY && $CURSOR -eq ${#BUFFER} ]]; then
+      BUFFER+=$POSTDISPLAY
+      CURSOR=${#BUFFER}
+      POSTDISPLAY=""
+    else
+      zle "$1"
+    fi
+  }
+  _sc_suggest_right() { _sc_suggest_accept forward-char; }
+  _sc_suggest_end() { _sc_suggest_accept end-of-line; }
+  zle -N _sc_suggest_right; zle -N _sc_suggest_end
+  autoload -Uz add-zle-hook-widget
+  add-zle-hook-widget line-pre-redraw _sc_line_update
+  bindkey '^[[C' _sc_suggest_right; bindkey '^[OC' _sc_suggest_right; bindkey '^F' _sc_suggest_right
+  bindkey '^[[F' _sc_suggest_end; bindkey '^[OF' _sc_suggest_end; bindkey '^E' _sc_suggest_end
+fi
+{% endraw %}{% endif %}

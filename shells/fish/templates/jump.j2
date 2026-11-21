@@ -1,0 +1,26 @@
+# --- jump (frecency directories: j <words>, ji <words> to pick) ---
+if command -q shellcraft
+  function _sc_jump_add --on-variable PWD
+    command shellcraft jump add -- $PWD 2>/dev/null
+{%- if "cd" in hook_events %}
+    command shellcraft hook cd >/dev/null 2>&1 &
+{%- endif %}
+  end
+  function j
+    if test (count $argv) -eq 0
+      cd ~; return
+    end
+    if test (count $argv) -eq 1; and test -d $argv[1]
+      cd -- $argv[1]; return
+    end
+    set -l d (command shellcraft jump query $argv); or begin
+      echo "j: no match for: $argv" >&2; return 1
+    end
+    cd -- $d
+  end
+  function ji
+    set -l d (command shellcraft jump list $argv | sed 's/^ *[0-9.]*  //' | command shellcraft pick); or return
+    cd -- $d
+  end
+end
+

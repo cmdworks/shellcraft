@@ -1,0 +1,16 @@
+[package]
+name = "shellcraft-health"
+description = "doctor, stats, bench and profile"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+shellcraft-core = { workspace = true }
+shellcraft-shell = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,16 @@
+[package]
+name = "shellcraft-shell-api"
+description = "ShellEmitter trait, template context, key syntax, quoting and the rc block"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+minijinja = { workspace = true }
+serde = { workspace = true }
+shellcraft-core = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

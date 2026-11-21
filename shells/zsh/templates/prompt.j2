@@ -1,0 +1,65 @@
+{% if prompt.builtin %}{% raw %}# --- built-in prompt: drawn here, only git/versions/plugin segments come from shellcraft ---
+# Directory, duration, exit status and symbol are rendered inside the shell, so the prompt is
+# correct the moment it appears. The segments are fetched in the background and the prompt is
+# redrawn only if they changed (starting a process from the line editor costs about 10 ms).
+if command -v shellcraft >/dev/null; then
+  typeset -g _sc_prompt_fd="" _sc_segs="" _sc_segs_pwd="" _sc_p_head="" _sc_p_tail=""
+  # _sc_p_paint <sgr> <text>: coloured text that the prompt does not count toward its width
+  _sc_p_paint() { REPLY="%{"$'\e'"[${1}m%}${2//\%/%%}%{"$'\e'"[0m%}"; }
+  # sets _sc_p_head (before the segments) and _sc_p_tail (after) for status $1, duration $2 (ms)
+  _sc_p_build() {
+    emulate -L zsh
+    setopt extended_glob
+    local st=$1 ms=$2 d=$PWD rest prefix="" text h=""
+    local -a parts
+    if [[ -n $HOME && ( $d == $HOME || $d == $HOME/* ) ]]; then prefix="~"; rest=${d#$HOME}; else rest=$d; fi
+    parts=(${(s:/:)rest})
+    if (( ${#parts} > 3 )); then text="…/${(j:/:)parts[-3,-1]}"
+    elif (( ${#parts} == 0 )); then text=${prefix:-/}
+    elif [[ -z $prefix ]]; then text="/${(j:/:)parts}"
+    else text="~/${(j:/:)parts}"
+    fi
+    if [[ -n ${SSH_CONNECTION-} ]]; then _sc_p_paint {% endraw %}{{ pal.dim|q }}{% raw %} "${(%):-%n@%m}"; h="$REPLY "; fi
+    _sc_p_paint {% endraw %}{{ pal.dir|q }}{% raw %} "$text"; _sc_p_head="$h$REPLY"
+    local t=""
+    if (( {% endraw %}{{ prompt.min_duration_ms }}{% raw %} > 0 && ms >= {% endraw %}{{ prompt.min_duration_ms }}{% raw %} )); then
+      local s=$(( ms / 1000 ))
+      if (( s == 0 )); then text="${ms}ms"
+      elif (( s < 60 )); then text="${s}s"
+      elif (( s < 3600 )); then text="$(( s / 60 ))m$(( s % 60 ))s"
+      else text="$(( s / 3600 ))h$(( s % 3600 / 60 ))m"
+      fi
+      _sc_p_paint {% endraw %}{{ pal.duration|q }}{% raw %} "$text"; t=" $REPLY"
+    fi
+    if (( st != 0 )); then _sc_p_paint {% endraw %}{{ pal.err|q }}{% raw %} "[$st]"; t+=" $REPLY"; fi
+    if (( st == 0 )); then _sc_p_paint {% endraw %}{{ pal.ok|q }}{% raw %} {% endraw %}{{ prompt.symbol|q }}{% raw %}
+    else _sc_p_paint {% endraw %}{{ pal.err|q }}{% raw %} {% endraw %}{{ prompt.symbol|q }}{% raw %}
+    fi
+    _sc_p_tail="$t $REPLY "
+  }
+  _sc_prompt_ready() {
+    local fd=$1 out
+    zle -F $fd
+    IFS= read -r -d '' -u $fd out
+    exec {fd}<&-
+    _sc_prompt_fd=""
+    [[ $out == $_sc_segs && $_sc_segs_pwd == $PWD ]] && return 0   # nothing new: no redraw
+    _sc_segs=$out; _sc_segs_pwd=$PWD
+    PROMPT="$_sc_p_head$_sc_segs$_sc_p_tail"
+    zle && zle reset-prompt
+  }
+  _sc_prompt_pre() {
+    if [[ -n $_sc_prompt_fd ]]; then   # the previous refresh never arrived (the next command started first)
+      zle -F $_sc_prompt_fd 2>/dev/null; exec {_sc_prompt_fd}<&-; _sc_prompt_fd=""
+    fi
+    _sc_p_build ${_sc_ec:-0} ${_sc_ms:-0}
+    # segments of the last prompt in this directory are shown at once, then refreshed
+    [[ $_sc_segs_pwd == $PWD ]] || _sc_segs=""
+    PROMPT="$_sc_p_head$_sc_segs$_sc_p_tail"
+    exec {_sc_prompt_fd}< <(command shellcraft prompt --shell zsh --segments-only)
+    zle -F $_sc_prompt_fd _sc_prompt_ready
+  }
+  # after _sc_hist_post, which sets _sc_ec and _sc_ms
+  precmd_functions+=(_sc_prompt_pre)
+fi
+{% endraw %}{% endif %}

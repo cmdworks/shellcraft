@@ -1,0 +1,24 @@
+# --- aliases ---
+function reload; exec fish $argv; end
+function c; clear $argv; end
+function ..; cd .. $argv; end
+function ...; cd ../.. $argv; end
+function gs; git status -sb $argv; end
+function gl; git log --oneline --graph --decorate -20 $argv; end
+function gd; git diff $argv; end
+function gds; git diff --staged $argv; end
+function ga; git add $argv; end
+function gc; git commit $argv; end
+function gp; git push $argv; end
+function gpl; git pull --ff-only $argv; end
+function gco; git checkout $argv; end
+function gb; git branch $argv; end
+if command -q shellcraft
+    function ls; shellcraft ls $argv; end
+    function ll; shellcraft ls -lah $argv; end
+    function la; shellcraft ls -a $argv; end
+    function lt; shellcraft ls -T $argv; end
+    function cat; shellcraft cat $argv; end
+end
+{% for name, value in aliases|items %}alias {{ name }} {{ value|q }}
+{% endfor %}

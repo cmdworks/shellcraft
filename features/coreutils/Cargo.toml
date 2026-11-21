@@ -1,0 +1,18 @@
+[package]
+name = "shellcraft-coreutils"
+description = "ls, cat, files and cheat sheets"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+crossterm = { workspace = true }
+ignore = { workspace = true }
+shellcraft-core = { workspace = true }
+syntect = { workspace = true }
+
+[lints]
+workspace = true

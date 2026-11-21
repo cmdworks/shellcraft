@@ -1,0 +1,530 @@
+---
+source: shells/all/tests/snapshots.rs
+expression: "render(ShellKind::Zsh, cfg)"
+---
+# shellcraft: generated for zsh. Do not edit; change shellcraft.toml and run `shellcraft apply`.
+_sc_cache="${XDG_CACHE_HOME:-$HOME/.cache}/shellcraft"
+
+# --- options and history ---
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=5000
+SAVEHIST=5000
+setopt AUTO_CD AUTO_PUSHD PUSHD_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE SHARE_HISTORY
+setopt INTERACTIVE_COMMENTS
+
+# --- environment ---
+typeset -U path PATH fpath manpath infopath
+# Homebrew: same variables as `brew shellenv`, without spawning brew (about 10 ms)
+for _sc_b in /opt/homebrew:/opt/homebrew /usr/local:/usr/local/Homebrew /home/linuxbrew/.linuxbrew:/home/linuxbrew/.linuxbrew/Homebrew; do
+  if [[ -x ${_sc_b%%:*}/bin/brew ]]; then
+    export HOMEBREW_PREFIX=${_sc_b%%:*} HOMEBREW_CELLAR=${_sc_b%%:*}/Cellar HOMEBREW_REPOSITORY=${_sc_b#*:}
+    path=($HOMEBREW_PREFIX/bin $HOMEBREW_PREFIX/sbin $path)
+    [[ -d $HOMEBREW_PREFIX/share/zsh/site-functions ]] && fpath=($HOMEBREW_PREFIX/share/zsh/site-functions $fpath)
+    manpath=($HOMEBREW_PREFIX/share/man $manpath)
+    infopath=($HOMEBREW_PREFIX/share/info $infopath)
+    break
+  fi
+done
+unset _sc_b
+path=("$HOME/.local/bin" $path)
+for _sc_d in "$HOME/.atuin/bin" "$HOME/.fzf/bin" "${BUN_INSTALL:-$HOME/.bun}/bin"; do
+  [[ -d $_sc_d ]] && path=("$_sc_d" $path)
+done
+unset _sc_d
+export EDITOR='nvim'
+export GREETING='it'\''s here'
+
+# --- completion: compinit runs lazily on the first Tab (about 10 ms saved at startup) ---
+# Until then `compdef` calls from tool init scripts are queued and replayed.
+typeset -ga _sc_compdefs=()
+compdef() { _sc_compdefs+=("${(j: :)${(q)@}}"); }
+# Commands without their own completion: flags and subcommands learned from --help (cached)
+_sc_help_complete() {
+  [[ -n ${_comps[$words[1]]} ]] && return 1
+  local -a lines vals
+  lines=("${(@f)$(command shellcraft complete -- "${(@)words[1,CURRENT]}" 2>/dev/null)}")
+  (( ${#lines} )) && [[ -n ${lines[1]} ]] || return 1
+  local l
+  for l in $lines; do vals+=("${${l%%$'\t'*}//:/\\:}:${l#*$'\t'}"); done
+  _describe -t shellcraft-help 'flags and subcommands' vals
+}
+
+# Completion look, applied on the first Tab: the first zstyle loads a module that costs about 4.6 ms.
+_sc_comp_style() {
+  zstyle ':completion:*' menu select
+  zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*'
+  zstyle ':completion:*' list-colors "${(s.:.)${LS_COLORS:-di=1;34:ln=36:ex=32:so=33:pi=33}}"
+  zstyle ':completion:*' group-name ''
+  zstyle ':completion:*' list-dirs-first true
+  zstyle ':completion:*' special-dirs false
+  zstyle ':completion:*:descriptions' format '%F{8}── %d ──%f'
+  zstyle ':completion:*:messages' format '%F{8}%d%f'
+  zstyle ':completion:*:warnings' format '%F{1}no matches%f'
+  zstyle ':completion:*' completer _sc_help_complete _complete _ignored
+}
+# Everything the completion system needs (about 20 ms): run once, at the second prompt when the
+# caches already exist (see _sc_comp_warm), otherwise on the first Tab.
+_sc_comp_setup() {
+  emulate -L zsh
+  setopt extended_glob
+  typeset -g _sc_comp_done=1
+  _sc_comp_style
+  unfunction compdef 2>/dev/null
+  local dir="${XDG_CACHE_HOME:-$HOME/.cache}/shellcraft"
+  local dump="$dir/zcompdump"
+  mkdir -p "$dir"
+  # Completion scripts of installed tools, generated once and cached (must precede compinit)
+  local cdir="$dir/completions" gen=0 spec name cmd bin f
+  local -a specs=(
+    "gh:gh completion -s zsh"
+    "docker:docker completion zsh"
+    "mise:mise completion zsh"
+    "atuin:atuin gen-completions --shell zsh"
+    "rg:rg --generate complete-zsh"
+    "starship:starship completions zsh"
+    "shellcraft:shellcraft completions zsh"
+  )
+  for spec in $specs; do
+    name=${spec%%:*}; cmd=${spec#*:}
+    bin=${commands[$name]}
+    [[ -n $bin ]] || continue
+    f="$cdir/_$name"
+    if [[ ! -s $f || $bin -nt $f ]]; then
+      mkdir -p "$cdir"
+      ${=cmd} >| "$f" 2>/dev/null || rm -f "$f"
+      gen=1
+    fi
+  done
+  # The biggest system completion functions cost 100+ ms to parse every session (_git is 388 KB).
+  # Copy them next to the cached ones and compile that folder once; zsh then skips the parsing.
+  local big d src zwc="$cdir.zwc"
+  for big in _git _gcc _tmux; do
+    src=""
+    for d in $fpath; do [[ $d != $cdir && -f $d/$big ]] && { src=$d/$big; break; }; done
+    [[ -n $src ]] || continue
+    if [[ ! -f $cdir/$big || $src -nt $cdir/$big ]]; then
+      mkdir -p "$cdir" && cp -f "$src" "$cdir/$big" && gen=1
+    fi
+  done
+  if [[ -d $cdir ]] && (( gen )) || [[ -d $cdir && ! -f $zwc ]]; then
+    zcompile "$zwc" "$cdir"/_*(N) 2>/dev/null
+  fi
+  [[ -d $cdir ]] && fpath=($cdir $fpath)
+  (( gen )) && rm -f "$dump"
+  autoload -Uz compinit
+  if [[ -n $dump(#qN.mh+24) || ! -f $dump ]]; then
+    compinit -d "$dump"
+  else
+    compinit -C -d "$dump"
+  fi
+  local c
+  for c in $_sc_compdefs; do eval "compdef $c"; done
+  unset _sc_compdefs
+}
+# The widget stays defined: fzf-completion may have captured it as its fallback.
+_sc_first_tab() {
+  (( ${+_sc_comp_done} )) || _sc_comp_setup
+  zle expand-or-complete
+}
+# After the first command, while you are thinking, not on the Tab press. A brand-new cache
+# (first ever run: completion scripts are generated) is left for the first Tab.
+typeset -gi _sc_warm_n=0
+_sc_comp_warm() {
+  (( _sc_warm_n++ >= 1 )) || return 0   # not before the very first prompt
+  precmd_functions=(${precmd_functions:#_sc_comp_warm})
+  (( ${+_sc_comp_done} )) && return 0
+  [[ -s ${XDG_CACHE_HOME:-$HOME/.cache}/shellcraft/zcompdump ]] && _sc_comp_setup
+}
+precmd_functions+=(_sc_comp_warm)
+zle -N _sc_first_tab
+bindkey '^I' _sc_first_tab
+
+
+
+# --- keybindings (emacs mode) ---
+bindkey -e
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search
+bindkey '^[OA' up-line-or-beginning-search
+bindkey '^[[B' down-line-or-beginning-search
+bindkey '^[OB' down-line-or-beginning-search
+bindkey '^[[1;5C' forward-word
+bindkey '^[[1;5D' backward-word
+bindkey '^[[1;3C' forward-word
+bindkey '^[[1;3D' backward-word
+bindkey '^[f' forward-word
+bindkey '^[b' backward-word
+bindkey '^[[H' beginning-of-line
+bindkey '^[[F' end-of-line
+bindkey '^[[1~' beginning-of-line
+bindkey '^[[4~' end-of-line
+bindkey '^[[3~' delete-char
+bindkey '^[[Z' reverse-menu-complete
+
+# --- tools (init output cached; regenerated when the binary changes) ---
+_sc_cached_init() {
+  local name=$1; shift
+  local bin=${commands[$1]}
+  [[ -n $bin ]] || return 0
+  local f="$_sc_cache/init/$name.zsh"
+  if [[ ! -s $f || $bin -nt $f ]]; then
+    mkdir -p "${f:h}"
+    "$@" >| "$f" 2>/dev/null || { rm -f "$f"; return 0; }
+  fi
+  source "$f"
+}
+_sc_cached_init zoxide zoxide init zsh
+_sc_cached_init fzf fzf --zsh
+_sc_cached_init atuin atuin init zsh --disable-up-arrow
+unfunction _sc_cached_init
+
+# --- history (recorded by shellcraft) ---
+if command -v shellcraft >/dev/null; then
+  zmodload zsh/datetime 2>/dev/null
+  _sc_hist_pre() { _sc_hist_cmd=$1; _sc_hist_t0=$EPOCHREALTIME; }
+  _sc_hist_post() {
+    local ec=$?
+    _sc_ec=$ec _sc_ms=0
+    [[ -n ${_sc_hist_cmd-} ]] || return 0
+    local -i ms=$(( (EPOCHREALTIME - _sc_hist_t0) * 1000 ))
+    _sc_ms=$ms
+    (( $+functions[_sc_cache_add] )) && _sc_cache_add $ec "$PWD" "$_sc_hist_cmd"
+    { command shellcraft hist add --exit $ec --duration $ms --cwd "$PWD" --session $$ -- "$_sc_hist_cmd" } &>/dev/null &!
+    unset _sc_hist_cmd
+  }
+  preexec_functions+=(_sc_hist_pre)
+  # runs first, so it sees the exit status of the command that just finished
+  precmd_functions=(_sc_hist_post $precmd_functions)
+fi
+# --- line editor: dim suggestion from your history and syntax colours, all inside the shell ---
+# No process is started per keystroke. History is loaded once, on the first key, from shellcraft.
+# Right, End or Ctrl-F accepts the suggestion; commands from other terminals are picked up at your next prompt.
+if command -v shellcraft >/dev/null; then
+  zmodload zsh/parameter 2>/dev/null
+  typeset -gi _sc_inline=1 _sc_highlight=1 _sc_hist_ready=0
+  typeset -ga _sc_hist=()
+  _sc_hist_load() {
+    _sc_hist_ready=1
+    _sc_stamp_seen=$(<$_sc_stamp_file) 2>/dev/null
+    local out; out=$(command shellcraft hist recent -n 3000 2>/dev/null)
+    [[ -n $out ]] && _sc_hist=("${(@f)out}")
+  }
+  # after a command: remember it for suggestions (same rules as the database: successes, one line)
+  typeset -ga _sc_own=()
+  _sc_cache_add() {
+    (( _sc_hist_ready )) || return 0
+    [[ $1 == 0 && -n $3 && $3 != *$'\n'* && $3 != *$'\t'* ]] || return 0
+    local e="$2"$'\t'"$3"
+    _sc_hist=("$e" "${(@)_sc_hist[1,2999]:#$e}")
+    _sc_own=("$e" "${(@)_sc_own[1,4]}")   # the last few of our own, kept across a reload
+  }
+  # Other terminals: every `hist add` writes a one-line stamp file (session, time). Reading it is
+  # a builtin, no process; when another session wrote since we looked, reload in the background.
+  typeset -g _sc_stamp_file="${XDG_DATA_HOME:-$HOME/.local/share}/shellcraft/history.stamp" _sc_stamp_seen="" _sc_hist_fd=""
+  _sc_cross_check() {
+    (( _sc_hist_ready )) || return 0
+    local s; s=$(<$_sc_stamp_file) 2>/dev/null || return 0
+    [[ -n $s && $s != $_sc_stamp_seen ]] || return 0
+    _sc_stamp_seen=$s
+    [[ ${s%% *} == $$ ]] && return 0   # our own write, already in memory
+    _sc_hist_reload_async
+  }
+  _sc_hist_reload_async() {
+    [[ -n $_sc_hist_fd ]] && return 0   # one reload at a time
+    exec {_sc_hist_fd}< <(command shellcraft hist recent -n 3000 2>/dev/null)
+    zle -F $_sc_hist_fd _sc_hist_reloaded
+  }
+  _sc_hist_reloaded() {
+    local fd=$1 out
+    zle -F $fd
+    IFS= read -r -d '' -u $fd out
+    exec {fd}<&-
+    _sc_hist_fd=""
+    _sc_hist_apply "$out"
+  }
+  # replace the in-memory history with what the database returned, then put our own last commands
+  # back on top (their database write may not have finished when it was read)
+  _sc_hist_apply() {
+    [[ -n $1 ]] || return 0
+    _sc_hist=("${(@f)1}")
+    local e
+    for e in "${(@Oa)_sc_own}"; do _sc_hist=("$e" "${(@)_sc_hist:#$e}"); done
+  }
+  precmd_functions+=(_sc_cross_check)
+  # newest successful command in this directory that starts with $BUFFER and is longer, else
+  # the newest anywhere
+  _sc_suggest() {
+    emulate -L zsh
+    setopt extended_glob
+    (( _sc_hist_ready )) || _sc_hist_load
+    local p=${BUFFER//(#m)[\\*?\[\]()|#~^<>]/\\$MATCH} d=${PWD//(#m)[\\*?\[\]()|#~^<>]/\\$MATCH} m t=$'\t'
+    m=${_sc_hist[(r)${d}${t}${p}?*]}   # ($'\t' written inline inside a subscript does not match)
+    [[ -n $m ]] || m=${_sc_hist[(r)*${t}${p}?*]}
+    [[ -n $m ]] && REPLY=${m#*${t}} || REPLY=""
+  }
+  # colours: split with zsh's own lexer, classify by position (command, option, string, variable)
+  _sc_highlight_line() {
+    emulate -L zsh
+    setopt extended_glob
+    local -a words; words=(${(z)BUFFER})
+    local w rest st pos=1 start end skip=0 expect=1 prefix=0 n=${#BUFFER}
+    for w in $words; do
+      rest=${BUFFER[pos,-1]}
+      start=$(( pos + ${#rest} - ${#${rest##[[:space:]]#}} - 1 ))
+      end=$(( start + ${#w} )); pos=$(( end + 1 ))
+      if [[ $w == \#* ]]; then
+        region_highlight+=("$start $n fg=8 memo=shellcraft"); break
+      elif [[ $w == [\|\&\;]## ]]; then
+        st=fg=blue; expect=1; prefix=0
+      elif [[ $w == [0-9]#[\<\>]* ]]; then
+        st=fg=blue; [[ $w == [0-9]#[\<\>\&]## ]] && skip=1
+      elif (( skip )); then
+        skip=0; continue
+      elif (( expect )) && [[ $w == [A-Za-z_][A-Za-z0-9_]#=* ]]; then
+        region_highlight+=("$start $(( start + ${#${w%%=*}} )) fg=magenta memo=shellcraft"); continue
+      elif (( expect )) && ! { (( prefix )) && [[ $w == -* ]] }; then
+        if (( $+commands[$w] || $+aliases[$w] || $+functions[$w] || $+builtins[$w] || $+reswords[$w] )) || [[ -x $w ]]; then
+          st=fg=green,bold
+        elif (( end == n )); then
+          continue  # still typing this word: no verdict yet
+        else
+          st=fg=red
+        fi
+        case $w in sudo|doas|env|command|exec|nohup|time|builtin|noglob|nocorrect|xargs) prefix=1 ;; *) expect=0 ;; esac
+      elif [[ $w == -* ]]; then st=fg=cyan
+      elif [[ $w == [\'\"]* ]]; then st=fg=yellow
+      elif [[ $w == \$* ]]; then st=fg=magenta
+      else continue
+      fi
+      region_highlight+=("$start $end $st memo=shellcraft")
+    done
+  }
+  _sc_line_update() {
+    region_highlight=("${(@)region_highlight:#*memo=shellcraft}")
+    POSTDISPLAY=""
+    [[ -n $BUFFER && $BUFFER != *$'\n'* ]] || return 0
+    if (( _sc_inline )) && [[ $CURSOR -eq ${#BUFFER} ]]; then
+      _sc_suggest
+      if [[ -n $REPLY ]]; then
+        POSTDISPLAY=${REPLY#"$BUFFER"}
+        region_highlight+=("${#BUFFER} $(( ${#BUFFER} + ${#POSTDISPLAY} )) fg=8 memo=shellcraft")
+      fi
+    fi
+    (( _sc_highlight )) && _sc_highlight_line
+  }
+  _sc_suggest_accept() {
+    if [[ -n $POSTDISPLAY && $CURSOR -eq ${#BUFFER} ]]; then
+      BUFFER+=$POSTDISPLAY
+      CURSOR=${#BUFFER}
+      POSTDISPLAY=""
+    else
+      zle "$1"
+    fi
+  }
+  _sc_suggest_right() { _sc_suggest_accept forward-char; }
+  _sc_suggest_end() { _sc_suggest_accept end-of-line; }
+  zle -N _sc_suggest_right; zle -N _sc_suggest_end
+  autoload -Uz add-zle-hook-widget
+  add-zle-hook-widget line-pre-redraw _sc_line_update
+  bindkey '^[[C' _sc_suggest_right; bindkey '^[OC' _sc_suggest_right; bindkey '^F' _sc_suggest_right
+  bindkey '^[[F' _sc_suggest_end; bindkey '^[OF' _sc_suggest_end; bindkey '^E' _sc_suggest_end
+fi
+
+# --- built-in prompt: drawn here, only git/versions/plugin segments come from shellcraft ---
+# Directory, duration, exit status and symbol are rendered inside the shell, so the prompt is
+# correct the moment it appears. The segments are fetched in the background and the prompt is
+# redrawn only if they changed (starting a process from the line editor costs about 10 ms).
+if command -v shellcraft >/dev/null; then
+  typeset -g _sc_prompt_fd="" _sc_segs="" _sc_segs_pwd="" _sc_p_head="" _sc_p_tail=""
+  # _sc_p_paint <sgr> <text>: coloured text that the prompt does not count toward its width
+  _sc_p_paint() { REPLY="%{"$'\e'"[${1}m%}${2//\%/%%}%{"$'\e'"[0m%}"; }
+  # sets _sc_p_head (before the segments) and _sc_p_tail (after) for status $1, duration $2 (ms)
+  _sc_p_build() {
+    emulate -L zsh
+    setopt extended_glob
+    local st=$1 ms=$2 d=$PWD rest prefix="" text h=""
+    local -a parts
+    if [[ -n $HOME && ( $d == $HOME || $d == $HOME/* ) ]]; then prefix="~"; rest=${d#$HOME}; else rest=$d; fi
+    parts=(${(s:/:)rest})
+    if (( ${#parts} > 3 )); then text="…/${(j:/:)parts[-3,-1]}"
+    elif (( ${#parts} == 0 )); then text=${prefix:-/}
+    elif [[ -z $prefix ]]; then text="/${(j:/:)parts}"
+    else text="~/${(j:/:)parts}"
+    fi
+    if [[ -n ${SSH_CONNECTION-} ]]; then _sc_p_paint '90' "${(%):-%n@%m}"; h="$REPLY "; fi
+    _sc_p_paint '34' "$text"; _sc_p_head="$h$REPLY"
+    local t=""
+    if (( 2000 > 0 && ms >= 2000 )); then
+      local s=$(( ms / 1000 ))
+      if (( s == 0 )); then text="${ms}ms"
+      elif (( s < 60 )); then text="${s}s"
+      elif (( s < 3600 )); then text="$(( s / 60 ))m$(( s % 60 ))s"
+      else text="$(( s / 3600 ))h$(( s % 3600 / 60 ))m"
+      fi
+      _sc_p_paint '33' "$text"; t=" $REPLY"
+    fi
+    if (( st != 0 )); then _sc_p_paint '31' "[$st]"; t+=" $REPLY"; fi
+    if (( st == 0 )); then _sc_p_paint '32' '❯'
+    else _sc_p_paint '31' '❯'
+    fi
+    _sc_p_tail="$t $REPLY "
+  }
+  _sc_prompt_ready() {
+    local fd=$1 out
+    zle -F $fd
+    IFS= read -r -d '' -u $fd out
+    exec {fd}<&-
+    _sc_prompt_fd=""
+    [[ $out == $_sc_segs && $_sc_segs_pwd == $PWD ]] && return 0   # nothing new: no redraw
+    _sc_segs=$out; _sc_segs_pwd=$PWD
+    PROMPT="$_sc_p_head$_sc_segs$_sc_p_tail"
+    zle && zle reset-prompt
+  }
+  _sc_prompt_pre() {
+    if [[ -n $_sc_prompt_fd ]]; then   # the previous refresh never arrived (the next command started first)
+      zle -F $_sc_prompt_fd 2>/dev/null; exec {_sc_prompt_fd}<&-; _sc_prompt_fd=""
+    fi
+    _sc_p_build ${_sc_ec:-0} ${_sc_ms:-0}
+    # segments of the last prompt in this directory are shown at once, then refreshed
+    [[ $_sc_segs_pwd == $PWD ]] || _sc_segs=""
+    PROMPT="$_sc_p_head$_sc_segs$_sc_p_tail"
+    exec {_sc_prompt_fd}< <(command shellcraft prompt --shell zsh --segments-only)
+    zle -F $_sc_prompt_fd _sc_prompt_ready
+  }
+  # after _sc_hist_post, which sets _sc_ec and _sc_ms
+  precmd_functions+=(_sc_prompt_pre)
+fi
+
+# --- pickers: Ctrl-R history, Ctrl-T file, Alt-C directory (built-in picker, honours .gitignore) ---
+if command -v shellcraft >/dev/null; then
+  _sc_file_widget() {
+    local sel
+    sel=$(command shellcraft files | command shellcraft pick) || { zle reset-prompt; return 0 }
+    LBUFFER+="${(q)sel}"
+    zle reset-prompt
+  }
+  _sc_cd_widget() {
+    local sel
+    sel=$(command shellcraft files --dirs | command shellcraft pick) || { zle reset-prompt; return 0 }
+    cd -- "$sel" && zle reset-prompt
+  }
+  zle -N _sc_file_widget; zle -N _sc_cd_widget
+  bindkey '^T' _sc_file_widget
+  bindkey '\ec' _sc_cd_widget
+  bindkey 'ç' _sc_cd_widget  # Option+C in macOS Terminal
+fi
+# --- user keys ---
+bindkey '^G' push-line
+
+# --- abbreviations: expand a first word in place when you press space ---
+typeset -A _sc_abbr=(
+)
+_sc_abbr_expand() {
+  if [[ $LBUFFER != *' '* && -n ${_sc_abbr[$LBUFFER]-} ]]; then
+    LBUFFER=${_sc_abbr[$LBUFFER]}
+  fi
+  zle self-insert
+}
+zle -N _sc_abbr_expand
+bindkey ' ' _sc_abbr_expand
+bindkey -M isearch ' ' magic-space
+
+# --- aliases ---
+alias reload='exec zsh'
+alias c='clear'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias gs='git status -sb'
+alias gl='git log --oneline --graph --decorate -20'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gpl='git pull --ff-only'
+alias gco='git checkout'
+alias gb='git branch'
+if command -v shellcraft >/dev/null; then
+  alias ls='shellcraft ls'
+  alias ll='shellcraft ls -lah'
+  alias la='shellcraft ls -a'
+  alias lt='shellcraft ls -T'
+  alias cat='shellcraft cat'
+fi
+alias ll='ls -lah'
+
+# --- jump (frecency directories: j <words>, ji <words> to pick) ---
+if command -v shellcraft >/dev/null; then
+  # in the background: the database write must not delay the prompt (updates are atomic renames;
+  # two cds within a few milliseconds could lose one count)
+  _sc_jump_add() { { command shellcraft jump add -- "$PWD" } &>/dev/null &!; }
+  chpwd_functions+=(_sc_jump_add)
+  j() {
+    if [ $# -eq 0 ]; then cd ~; return; fi
+    if [ $# -eq 1 ] && [ -d "$1" ]; then cd -- "$1"; return; fi
+    local d; d=$(command shellcraft jump query "$@") || { echo "j: no match for: $*" >&2; return 1; }
+    cd -- "$d"
+  }
+  ji() {
+    local d; d=$(command shellcraft jump list "$@" | sed 's/^ *[0-9.]*  //' | command shellcraft pick) || return
+    cd -- "$d"
+  }
+fi
+
+# --- command not found: suggest close names; `fix` puts the corrected last command in the buffer ---
+if command -v shellcraft >/dev/null; then
+  command_not_found_handler() {
+    command shellcraft suggest --pretty -- "$1"
+    return 127
+  }
+  fix() {
+    local last=${$(fc -ln -1)# } first s
+    first=${last%% *}
+    s=$(command shellcraft suggest -- "$first" | head -1) || { echo "fix: no suggestion for $first" >&2; return 1; }
+    print -z -- "$s${last#$first}"
+  }
+fi
+
+
+# --- functions ---
+mkcd() { mkdir -p -- "$1" && cd -- "$1"; }
+extract() {
+  [[ -f $1 ]] || { echo "extract: '$1' is not a file" >&2; return 1; }
+  case $1 in
+    *.tar.bz2|*.tbz2) tar xjf "$1" ;;
+    *.tar.gz|*.tgz)   tar xzf "$1" ;;
+    *.tar.xz|*.txz)   tar xJf "$1" ;;
+    *.tar.zst)        tar --zstd -xf "$1" ;;
+    *.tar)            tar xf "$1" ;;
+    *.zip)            unzip "$1" ;;
+    *.gz)             gunzip "$1" ;;
+    *.bz2)            bunzip2 "$1" ;;
+    *.xz)             unxz "$1" ;;
+    *.7z)             7z x "$1" ;;
+    *.rar)            unrar x "$1" ;;
+    *) echo "extract: unknown format '$1'" >&2; return 1 ;;
+  esac
+}
+killport() {
+  [[ -n $1 ]] || { echo "usage: killport <port>" >&2; return 1; }
+  local pids; pids=$(lsof -ti tcp:"$1" 2>/dev/null)
+  [[ -n $pids ]] || { echo "nothing listening on $1"; return 0; }
+  echo "$pids" | xargs kill -9 && echo "killed $pids"
+}
+path-list() { print -l $path; }
+fbr() {
+    local b
+    b=$(git branch --all --sort=-committerdate | grep -v HEAD | sed 's/^[* ] //; s#remotes/origin/##' | awk '!s[$0]++' | command shellcraft pick) || return
+    git checkout "$b"
+  }
+if (( $+commands[fzf] )); then
+  fshow() {
+    git log --graph --color=always --format='%C(auto)%h%d %s %C(black)%C(bold)%cr' "$@" |
+      fzf --ansi --no-sort --reverse --tiebreak=index \
+          --bind 'enter:execute(echo {} | grep -o "[a-f0-9]\{7\}" | head -1 | xargs -I% git show --color=always % | less -R)'
+  }
+fi
+unset _sc_cache

@@ -1,0 +1,8 @@
+# --- command not found: suggest close names ---
+if command -v shellcraft >/dev/null; then
+  command_not_found_handle() {
+    command shellcraft suggest --pretty -- "$1"
+    return 127
+  }
+fi
+

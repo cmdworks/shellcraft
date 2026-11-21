@@ -1,0 +1,15 @@
+# --- command not found: suggest close names; `fix` puts the corrected last command in the buffer ---
+if command -q shellcraft
+  function fish_command_not_found
+    command shellcraft suggest --pretty -- $argv[1]
+  end
+  function fix
+    set -l last $history[1]
+    set -l parts (string split -m 1 ' ' -- $last)
+    set -l s (command shellcraft suggest -- $parts[1] | head -1); or begin
+      echo "fix: no suggestion for $parts[1]" >&2; return 1
+    end
+    commandline -r -- "$s $parts[2]"
+  end
+end
+

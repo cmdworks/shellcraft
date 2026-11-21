@@ -1,0 +1,15 @@
+[package]
+name = "shellcraft-bundled"
+description = "The plugins that ship inside the binary"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+shellcraft-bundled-git = { workspace = true }
+shellcraft-bundled-versions = { workspace = true }
+shellcraft-plugin = { workspace = true }
+
+[lints]
+workspace = true

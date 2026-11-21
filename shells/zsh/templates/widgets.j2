@@ -1,0 +1,26 @@
+# --- pickers: Ctrl-R history, Ctrl-T file, Alt-C directory (built-in picker, honours .gitignore) ---
+if command -v shellcraft >/dev/null; then
+{% if not atuin %}  _sc_hist_widget() {
+    local sel
+    sel=$(command shellcraft hist search | command shellcraft pick --query "$LBUFFER") || { zle reset-prompt; return 0 }
+    LBUFFER=$sel
+    zle reset-prompt
+  }
+  zle -N _sc_hist_widget
+  bindkey '^R' _sc_hist_widget
+{% endif %}  _sc_file_widget() {
+    local sel
+    sel=$(command shellcraft files | command shellcraft pick) || { zle reset-prompt; return 0 }
+    LBUFFER+="${(q)sel}"
+    zle reset-prompt
+  }
+  _sc_cd_widget() {
+    local sel
+    sel=$(command shellcraft files --dirs | command shellcraft pick) || { zle reset-prompt; return 0 }
+    cd -- "$sel" && zle reset-prompt
+  }
+  zle -N _sc_file_widget; zle -N _sc_cd_widget
+  bindkey '^T' _sc_file_widget
+  bindkey '\ec' _sc_cd_widget
+  bindkey 'ç' _sc_cd_widget  # Option+C in macOS Terminal
+fi
