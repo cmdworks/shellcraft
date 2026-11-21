@@ -575,7 +575,7 @@ fn plugins_install_from_a_folder_of_a_git_repository() {
         &[
             "plugin",
             "add",
-            "cmdworks/shellcraft-plugins/plugins/themes@v1",
+            "cmdworks/shellcraft-plugins/themes/colors@v1",
             "--yes",
         ],
         "",

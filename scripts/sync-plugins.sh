@@ -14,6 +14,7 @@ mkdir -p vendored-plugins
 cp "$src/index.toml" vendored-plugins/index.toml
 [ ! -f "$src/index.toml.sig" ] || cp "$src/index.toml.sig" vendored-plugins/index.toml.sig
 cp -R "$src/plugins" vendored-plugins/plugins
+[ ! -d "$src/themes" ] || cp -R "$src/themes" vendored-plugins/themes
 printf '%s\n' "$rev" > vendored-plugins/SOURCE
 find vendored-plugins -name .DS_Store -delete
 echo "vendored $rev from $src"

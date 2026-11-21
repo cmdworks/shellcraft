@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-alpha.3
+
+- Fix: zsh highlighting no longer prints "bad floating point constant" for words like `../`.
+- The manager's Theme screen also lists theme plugins that are not installed yet (installed when chosen).
+- Official themes live in `themes/` of the plugins repository (`passionp`, `colors`), plugins in `plugins/`.
+- Themes can define a prompt layout (icons, multi-colour symbol, right prompt, lock, root, venv/AWS parts) and plugin options; new official theme `passionp`. Segment tones `[ok]` and `[err]`.
+
 ## 0.1.0-alpha.2
 
 - Fix: the init script keeps the PATH line when shellcraft's folder is already on PATH.
