@@ -11,7 +11,9 @@ import argparse, fcntl, os, pty, re, select, shutil, struct, subprocess, sys, te
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-BRANCH = subprocess.run(["git", "branch", "--show-current"], cwd=REPO, capture_output=True, text=True).stdout.strip() or "HEAD"
+# the prompt shows the branch, or the short commit on a detached HEAD (a CI checkout of a tag)
+BRANCH = (subprocess.run(["git", "branch", "--show-current"], cwd=REPO, capture_output=True, text=True).stdout.strip()
+          or subprocess.run(["git", "rev-parse", "--short=7", "HEAD"], cwd=REPO, capture_output=True, text=True).stdout.strip() or "HEAD")
 
 def sh(*cmd, **kw):
     return subprocess.run(cmd, check=True, capture_output=True, text=True, **kw)

@@ -64,11 +64,15 @@ _sc_comp_setup() {
   done
   # The biggest system completion functions cost 100+ ms to parse every session (_git is 388 KB).
   # Copy them next to the cached ones and compile that folder once; zsh then skips the parsing.
+  zmodload -F zsh/stat b:zstat 2>/dev/null
   local big d src zwc="$cdir.zwc"
+  local -a sz
   for big in _git _gcc _tmux; do
     src=""
     for d in $fpath; do [[ $d != $cdir && -f $d/$big ]] && { src=$d/$big; break; }; done
     [[ -n $src ]] || continue
+    # only the big self-contained originals: a small `_git` (Homebrew's) sources a file next to it
+    zstat -A sz +size $src 2>/dev/null; (( ${sz[1]:-0} > 40000 )) || continue
     if [[ ! -f $cdir/$big || $src -nt $cdir/$big ]]; then
       mkdir -p "$cdir" && cp -f "$src" "$cdir/$big" && gen=1
     fi
@@ -80,9 +84,9 @@ _sc_comp_setup() {
   (( gen )) && rm -f "$dump"
   autoload -Uz compinit
   if [[ -n $dump(#qN.mh+24) || ! -f $dump ]]; then
-    compinit -d "$dump"
+    compinit -i -d "$dump"
   else
-    compinit -C -d "$dump"
+    compinit -C -i -d "$dump"
   fi
   local c
   for c in $_sc_compdefs; do eval "compdef $c"; done

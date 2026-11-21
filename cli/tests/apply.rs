@@ -23,6 +23,7 @@ impl Env {
             .env("SHELLCRAFT_CONFIG", self.cfg())
             .env("XDG_CACHE_HOME", self.dir.join("cache"))
             .env_remove("ZDOTDIR")
+            .env_remove("XDG_CONFIG_HOME") // CI runners set it; the rc paths must come from HOME
             .env_remove("SHELL")
             .output()
             .expect("run shellcraft")
