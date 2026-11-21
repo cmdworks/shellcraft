@@ -101,7 +101,7 @@ fn zsh_prompt_matches_the_renderer_byte_for_byte() {
     let script = r#"
 source $XDG_CACHE_HOME/shellcraft/init.zsh 2>/dev/null
 bad=0; n=0
-for dir in $HOME $HOME/a $HOME/a/b/c $HOME/a/b/c/d/e / /usr/lib /private/tmp; do
+for dir in $HOME $HOME/a $HOME/a/b/c $HOME/a/b/c/d/e / /usr/lib /usr; do
   cd $dir || continue
   for ssh in 0 1; do
     if (( ssh )); then export SSH_CONNECTION="1 2 3 4"; remote=(--remote "${(%):-%n@%m}"); else unset SSH_CONNECTION; remote=(); fi
@@ -181,7 +181,7 @@ fn fish_prompt_matches_the_renderer_byte_for_byte() {
         r#"
 source {init}
 set bad 0; set n 0
-for dir in $HOME $HOME/a $HOME/a/b/c $HOME/a/b/c/d/e / /usr/lib /private/tmp
+for dir in $HOME $HOME/a $HOME/a/b/c $HOME/a/b/c/d/e / /usr/lib /usr
   cd $dir; or continue
   for ssh in 0 1
     if test $ssh -eq 1
