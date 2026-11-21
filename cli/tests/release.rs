@@ -128,6 +128,24 @@ fn install_script_installs_wires_the_shell_and_refuses_a_bad_checksum() {
         init.contains(&bindir.display().to_string()),
         "the init script puts the install folder on PATH"
     );
+    // applying again from a shell that already has the folder on PATH must keep the PATH line,
+    // otherwise the next new terminal cannot find shellcraft
+    let again = Command::new(bindir.join("shellcraft"))
+        .arg("apply")
+        .env("HOME", root.join("home"))
+        .env("XDG_CONFIG_HOME", root.join("home/cfg"))
+        .env("XDG_CACHE_HOME", root.join("home/cache"))
+        .env("XDG_DATA_HOME", root.join("home/data"))
+        .env("SHELL", "/bin/zsh")
+        .env("PATH", format!("{}:/usr/bin:/bin", bindir.display()))
+        .output()
+        .expect("apply");
+    assert!(again.status.success());
+    let init = fs::read_to_string(root.join("home/cache/shellcraft/init.zsh")).expect("init");
+    assert!(
+        init.contains(&bindir.display().to_string()),
+        "the PATH line survives a re-apply"
+    );
     let rc = fs::read_to_string(root.join("home/.zshrc")).expect("zshrc");
     assert!(rc.contains("shellcraft"), "the shell is wired: {rc}");
     let _ = fs::remove_dir_all(&root);

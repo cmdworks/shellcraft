@@ -171,8 +171,10 @@ pub fn path_line(shell: Shell, dir: &str) -> String {
     }
 }
 
-/// The PATH line for the running binary, when it is installed somewhere that is not on PATH (a
-/// `~/.local/bin` install, say): the shell features call `shellcraft`, so it must be found.
+/// The PATH line for the running binary. Always included (it only adds the folder when it is
+/// missing): leaving it out because the folder is on PATH *now* would drop it from the script the
+/// next time `apply` runs inside a shell whose PATH this very line had set. Skipped for cargo
+/// `target/` builds, which developers put on PATH themselves.
 fn own_path_line(shell: Shell) -> String {
     let Ok(exe) = std::env::current_exe() else {
         return String::new();
@@ -180,10 +182,8 @@ fn own_path_line(shell: Shell) -> String {
     let Some(dir) = exe.parent() else {
         return String::new();
     };
-    let on_path =
-        std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d == dir));
     let dev_build = dir.components().any(|c| c.as_os_str() == "target");
-    if exe.file_name().and_then(|n| n.to_str()) != Some("shellcraft") || on_path || dev_build {
+    if exe.file_name().and_then(|n| n.to_str()) != Some("shellcraft") || dev_build {
         return String::new();
     }
     dir.to_str()
