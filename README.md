@@ -1,4 +1,18 @@
-# shellcraft
+<h1 align="center">shellcraft</h1>
+
+<p align="center">
+  <a href="https://github.com/cmdworks/shellcraft/releases"><img alt="release" src="https://img.shields.io/github/v/release/cmdworks/shellcraft?include_prereleases&label=release"></a>
+  <a href="https://github.com/cmdworks/shellcraft/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/cmdworks/shellcraft/ci.yml?label=CI"></a>
+  <a href="LICENSE"><img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+  <img alt="built with Rust" src="https://img.shields.io/badge/built%20with-Rust-orange?logo=rust">
+  <img alt="shells" src="https://img.shields.io/badge/shells-zsh%20%7C%20bash%20%7C%20fish%20%7C%20nushell%20%7C%20pwsh-informational">
+  <a href="https://github.com/cmdworks/shellcraft-plugins"><img alt="plugins repository" src="https://img.shields.io/badge/plugins-cmdworks%2Fshellcraft--plugins-8A2BE2"></a>
+</p>
+
+<p align="center"><b>Fast, single-binary shell customization.</b> One config for every shell.<br>
+Plugins and themes live in <a href="https://github.com/cmdworks/shellcraft-plugins">shellcraft-plugins</a>.</p>
+
+---
 
 A fast, single-binary shell customization tool written in Rust. One config drives zsh, bash, fish,
 nushell and PowerShell; the prompt, directory jumping, history with suggestions, fuzzy picker,
@@ -21,6 +35,16 @@ shellcraft doctor                  # check the setup
 **Status: early development.** Tested on macOS (Apple silicon) with real zsh, bash, fish and nushell
 sessions. Linux, Windows and PowerShell are untested. See [docs/shells.md](docs/shells.md) for exactly
 what works where.
+
+## Update and uninstall
+
+```bash
+shellcraft update                  # shellcraft itself and every plugin
+shellcraft uninstall               # remove the rc wiring and generated files (config is kept)
+sh uninstall.sh --all              # everything: wiring, binary, config, history, plugins
+```
+
+`uninstall.sh` is in this repository; `--all` deletes your config and data, so leave it off to keep them.
 
 ## Why
 
