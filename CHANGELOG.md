@@ -11,8 +11,6 @@
 
 - Fix: the init script keeps the PATH line when shellcraft's folder is already on PATH.
 
-- Themes can define a prompt layout (icons, multi-colour symbol, right prompt, lock, root, venv/AWS parts) and plugin options; new official theme `passionp`. Segment tones `[ok]` and `[err]`.
-
 ## 0.1.0-alpha
 
 First public release (alpha): expect rough edges; tested on macOS with real shells, Linux covered by CI only.
