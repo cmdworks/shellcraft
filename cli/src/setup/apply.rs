@@ -32,7 +32,7 @@ pub fn run(config_path: &Path, shell: Option<&str>, print: bool, wire_rc: bool) 
     let (script, plugins) = generate(&mut cfg, shell, config_path)?;
     if cfg.theme.name != "default" && !cfg.theme_data.contains_key(&cfg.theme.name) {
         eprintln!(
-            "warning: theme `{}` is not installed; using the default colours (`shellcraft plugin add themes`)",
+            "warning: theme `{0}` is not installed; using the default colours (`shellcraft install {0}`)",
             cfg.theme.name
         );
     }

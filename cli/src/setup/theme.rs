@@ -41,7 +41,7 @@ pub fn run(config_path: &Path, name: Option<String>, shell: Option<&str>) -> Res
         for n in &names {
             println!("{} {n}", if *n == current { "*" } else { " " });
         }
-        println!("(more themes: `shellcraft plugin add themes` from the official registry)");
+        println!("(more themes: `shellcraft search` lists the official themes)");
         return Ok(());
     };
     if !names.contains(&name) {

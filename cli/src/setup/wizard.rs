@@ -88,7 +88,7 @@ pub fn run(
         "default",
     )?;
     if !themes.contains(&theme) {
-        bail!("unknown theme `{theme}` (install more with `shellcraft plugin add themes`)");
+        bail!("unknown theme `{theme}` (install it with `shellcraft install {theme}`)");
     }
     let builtin = yes(&ask(
         input,

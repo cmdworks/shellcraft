@@ -294,7 +294,7 @@ fn install_update_remove_official_plugins_with_no_configuration() {
     let e = Env::new("official");
     let (ok, out) = e.run(&["search"], "");
     assert!(
-        ok && out.contains("docker") && out.contains("themes"),
+        ok && out.contains("docker") && out.contains("nord"),
         "{out}"
     );
     let (ok, out) = e.run(&["install", "base"], "");
@@ -307,7 +307,15 @@ fn install_update_remove_official_plugins_with_no_configuration() {
         "brief output, not the full summary: {out}"
     );
     let lock = e.lock();
-    for n in ["base", "git-aliases", "docker", "themes", "cheats"] {
+    for n in [
+        "base",
+        "git-aliases",
+        "docker",
+        "nord",
+        "dracula",
+        "gruvbox",
+        "cheats",
+    ] {
         assert!(
             lock.contains(&format!("name = \"{n}\"")),
             "{n} missing: {lock}"
@@ -326,7 +334,7 @@ fn install_update_remove_official_plugins_with_no_configuration() {
     );
     let (ok, out) = e.run(&["update"], "");
     assert!(
-        ok && out.contains("docker: up to date") && out.contains("6 plugins available"),
+        ok && out.contains("docker: up to date") && out.contains("8 plugins available"),
         "{out}"
     );
     // a theme and a cheat sheet from the plugins work
@@ -575,14 +583,14 @@ fn plugins_install_from_a_folder_of_a_git_repository() {
         &[
             "plugin",
             "add",
-            "cmdworks/shellcraft-plugins/themes/colors@v1",
+            "cmdworks/shellcraft-plugins/themes/nord@v1",
             "--yes",
         ],
         "",
     );
     assert!(ok, "{out}");
-    let (_, out) = e.run(&["plugin", "update", "themes", "--yes"], "");
-    assert!(out.contains("themes: pinned"), "{out}");
+    let (_, out) = e.run(&["plugin", "update", "nord", "--yes"], "");
+    assert!(out.contains("nord: pinned"), "{out}");
     // a folder that is not there, and an unsafe one
     let (ok, out) = e.run(
         &[

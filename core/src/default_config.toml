@@ -36,7 +36,7 @@ builtin = true           # shellcraft's own prompt; false keeps starship if enab
 # min_duration_ms = 2000 # show how long the last command took when slower than this
 
 [theme]
-# name = "nord"          # `default` is built in; others come from theme plugins (`plugin add themes`, then `shellcraft theme <name>`)
+# name = "nord"          # `default` is built in; others come from theme plugins (`shellcraft install nord`, then `shellcraft theme <name>`)
 
 [suggest]
 inline = true            # dim recommendation after the cursor; Right arrow or End accepts it

@@ -35,7 +35,7 @@ Open a new terminal and you are done. Or build it yourself: `cargo build --relea
 
 ```bash
 shellcraft doctor                  # check the setup
-shellcraft install docker themes   # add plugins by name, no configuration
+shellcraft install docker nord      # add plugins by name, no configuration
 shellcraft theme passionp          # switch theme
 shellcraft update                  # update shellcraft and every plugin
 ```

@@ -48,7 +48,8 @@ fn setup_writes_config_and_wires_rc() {
         .expect("answers");
     let out = bad.wait_with_output().expect("wait");
     assert!(
-        !out.status.success() && String::from_utf8_lossy(&out.stderr).contains("plugin add themes")
+        !out.status.success()
+            && String::from_utf8_lossy(&out.stderr).contains("shellcraft install dracula")
     );
     let rc = std::fs::read_to_string(home.join(".bashrc")).expect("rc");
     assert!(rc.contains("# >>> shellcraft >>>"), "{rc}");
