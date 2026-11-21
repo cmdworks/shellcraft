@@ -98,8 +98,9 @@ def steps(shell, fx):
         ("ctrl-t insert", "file_sweep\r", 1.5, ["file_sweep.txt"]),
     ]
     extra = {
+        # the first Tab sets up completion, which is slow on a cold CI runner (hence 8 s below)
         "zsh": [("abbreviation", "\x15zz \r", 1.5, ["ABBR_OK"]), ("not-found hint", "\x15gti status\r", 2.5, ["command not found: gti", "did you mean"]),
-                ("completion from --help", "\x15mytool de\t", 8.0, ["deploy"])  # the first Tab sets up completion (slow on a cold CI runner), ("completion flags", "\x15mytool deploy --\t", 2.5, ["--force"]),
+                ("completion from --help", "\x15mytool de\t", 8.0, ["deploy"]), ("completion flags", "\x15mytool deploy --\t", 2.5, ["--force"]),
                 ("git subcommand completion", "\x15git sta\t", 4.0, ["status"]),   # a menu lists stash and status; a unique match completes to status
                 ("option-c directory picker", "\x15\xc3\xa7", 1.5, ["/"])],
         "bash": [("exit status in prompt", "\x15false\r", 1.5, ["[1]"])],
